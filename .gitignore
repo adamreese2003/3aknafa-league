@@ -42,3 +42,6 @@ next-env.d.ts
 
 # league data — live SQLite database, uploaded photos & sessions (machine-local)
 /data
+
+# local tools (cloudflared binary for the public tunnel)
+/tools
