@@ -4,8 +4,12 @@ import PlayerAvatar from "@/components/PlayerAvatar";
 import { currentMonthKey, loadLeague } from "@/lib/league";
 import { monthlyAwards, monthlyHistory } from "@/lib/stats";
 import { formatMonth } from "@/lib/view";
+import type { MonthlyAward } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+const BEST_LABEL = "🏆 EL ZABEER";
+const WORST_LABEL = "💀 3AKNOFY EL SHAHR";
 
 export default async function AwardsPage() {
   const league = loadLeague();
@@ -23,27 +27,32 @@ export default async function AwardsPage() {
 
   const awardCard = (
     kind: "best" | "worst",
-    data: { playerId: number; winPct: number; wins: number; matchesPlayed: number; points: number } | null
+    data: MonthlyAward | null,
+    tiedWith: number[],
+    allTied: boolean
   ) => {
+    const isBest = kind === "best";
     if (!data) {
       return (
         <div className="glass flex min-h-44 flex-col items-center justify-center rounded-3xl p-6 text-center">
-          <p className="text-3xl">{kind === "best" ? "🏆" : "💀"}</p>
+          <p className="text-3xl">{isBest ? "🏆" : "💀"}</p>
           <p className="mt-2 font-display font-bold text-white/70">
-            {kind === "best" ? "Best Player" : "Worst Player"}
+            {isBest ? "EL ZABEER" : "3AKNOFY EL SHAHR"}
           </p>
-          <p className="mt-1 max-w-56 text-xs text-white/40">
-            Not enough qualifiers yet — a player needs{" "}
-            {league.settings.minMonthlyMatches} matches this month.
+          <p className="mt-1 max-w-60 text-xs text-white/40">
+            {allTied
+              ? "Dead tie — identical records, no skull awarded this month."
+              : `Not enough qualifiers yet — a player needs ${league.settings.minMonthlyMatches} matches this month.`}
           </p>
         </div>
       );
     }
-    const player = league.playerById.get(data.playerId)!;
-    const isBest = kind === "best";
+    const players = [league.playerById.get(data.playerId)!, ...tiedWith.map((id) => league.playerById.get(id)!)]
+      .filter(Boolean);
+    const shared = players.length > 1;
     return (
       <Link
-        href={`/players/${player.id}`}
+        href={`/players/${data.playerId}`}
         className={`glass glass-hover relative overflow-hidden rounded-3xl p-6 sm:p-8 ${
           isBest ? "border-volt-400/40" : "border-ember-400/30"
         }`}
@@ -58,18 +67,22 @@ export default async function AwardsPage() {
             isBest ? "border-volt-400/50 text-volt-300" : "border-ember-400/40 text-ember-400"
           }`}
         >
-          {isBest ? "🏆 Best of the month" : "💀 Worst of the month"}
+          {isBest ? BEST_LABEL : WORST_LABEL}
+          {shared ? " · TIE" : ""}
         </p>
         <div className="relative mt-6 flex flex-wrap items-center gap-5">
-          <PlayerAvatar
-            name={player.name}
-            photoUrl={player.photoUrl}
-            size={96}
-            ring={isBest}
-          />
+          {players.slice(0, 3).map((p) => (
+            <PlayerAvatar
+              key={p.id}
+              name={p.name}
+              photoUrl={p.photoUrl}
+              size={players.length > 1 ? 72 : 96}
+              ring={isBest}
+            />
+          ))}
           <div className="min-w-0">
             <p className="truncate font-display text-2xl font-bold text-white sm:text-3xl">
-              {player.nickname || player.name}
+              {players.map((p) => p.nickname || p.name).join(" & ")}
             </p>
             <p
               className={`font-display text-4xl font-bold tracking-tight sm:text-5xl ${
@@ -78,7 +91,9 @@ export default async function AwardsPage() {
             >
               {data.winPct.toFixed(1)}%
             </p>
-            <p className="text-sm text-white/55">win rate this month</p>
+            <p className="text-sm text-white/55">
+              win rate this month{shared ? " · identical records" : ""}
+            </p>
           </div>
         </div>
         <div className="relative mt-6 grid grid-cols-4 gap-2 border-t border-white/10 pt-5 text-center">
@@ -123,7 +138,7 @@ export default async function AwardsPage() {
           </h1>
           <p className="mt-3 max-w-xl text-sm text-white/65">
             {enabled
-              ? `Ranked by win rate among players with at least ${league.settings.minMonthlyMatches} matches this month. Ties broken by wins, then matches, then points.`
+              ? `Ranked by win rate among players with at least ${league.settings.minMonthlyMatches} matches this month. Ties broken by wins, then matches, then points — identical records are declared a tie.`
               : "An admin can re-enable them in Settings."}
           </p>
         </div>
@@ -132,8 +147,13 @@ export default async function AwardsPage() {
       {enabled && (
         <>
           <section className="grid gap-5 md:grid-cols-2">
-            {awardCard("best", current?.best ?? null)}
-            {awardCard("worst", current?.worst ?? null)}
+            {awardCard("best", current?.best ?? null, current?.bestTiedWith ?? [], false)}
+            {awardCard(
+              "worst",
+              current?.worst ?? null,
+              current?.worstTiedWith ?? [],
+              current?.allTied ?? false
+            )}
           </section>
 
           <section className="mt-12">
@@ -149,6 +169,12 @@ export default async function AwardsPage() {
                 {history.map((h) => {
                   const best = h.best ? league.playerById.get(h.best.playerId) : null;
                   const worst = h.worst ? league.playerById.get(h.worst.playerId) : null;
+                  const bestNames = [best, ...h.bestTiedWith.map((id) => league.playerById.get(id)!)]
+                    .filter(Boolean)
+                    .map((p) => p!.nickname || p!.name);
+                  const worstNames = [worst, ...h.worstTiedWith.map((id) => league.playerById.get(id)!)]
+                    .filter(Boolean)
+                    .map((p) => p!.nickname || p!.name);
                   return (
                     <div key={h.month} className="glass glass-hover rounded-2xl p-5">
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -169,7 +195,10 @@ export default async function AwardsPage() {
                             <PlayerAvatar name={best.name} photoUrl={best.photoUrl} size={38} />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-bold text-white">
-                                {best.nickname || best.name}
+                                {bestNames.join(" & ")}
+                                {bestNames.length > 1 && (
+                                  <span className="ml-1 text-[0.65rem] font-normal text-volt-300">TIE</span>
+                                )}
                               </p>
                               <p className="text-xs text-white/50">
                                 {h.best.winPct.toFixed(1)}% · {h.best.wins}W / {h.best.matchesPlayed}
@@ -177,7 +206,7 @@ export default async function AwardsPage() {
                             </div>
                           </Link>
                         )}
-                        {worst && h.worst && (
+                        {worst && h.worst ? (
                           <Link
                             href={`/players/${worst.id}`}
                             className="flex items-center gap-3 rounded-xl border border-ember-400/25 bg-ember-400/5 p-3 transition-colors duration-300 hover:bg-ember-400/10"
@@ -186,13 +215,23 @@ export default async function AwardsPage() {
                             <PlayerAvatar name={worst.name} photoUrl={worst.photoUrl} size={38} />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-bold text-white">
-                                {worst.nickname || worst.name}
+                                {worstNames.join(" & ")}
+                                {worstNames.length > 1 && (
+                                  <span className="ml-1 text-[0.65rem] font-normal text-ember-400">TIE</span>
+                                )}
                               </p>
                               <p className="text-xs text-white/50">
                                 {h.worst.winPct.toFixed(1)}% · {h.worst.wins}W / {h.worst.matchesPlayed}
                               </p>
                             </div>
                           </Link>
+                        ) : (
+                          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                            <span className="text-lg opacity-40">💀</span>
+                            <p className="text-xs text-white/40">
+                              {h.allTied ? "Dead tie — no 3aknofy this month" : "Not enough qualifiers"}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>

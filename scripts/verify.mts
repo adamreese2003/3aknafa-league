@@ -151,6 +151,36 @@ console.log("\n— Spec §10: tie-breakers —");
     [standings[1].playerId, standings[2].playerId], [6, 2]);
 }
 
+console.log("\n— Spec §10-4: identical records are a TIE —");
+{
+  // Bravo & Charlie win 6 team matches together (only qualifiers — opponents
+  // rotate so nobody else reaches the 5-match minimum).
+  const matches: MatchRecord[] = [];
+  let id = 1;
+  const oppPairs = [[1, 4], [1, 5], [4, 6], [5, 6], [1, 4], [5, 6]];
+  for (const [a, b] of oppPairs) {
+    matches.push(mk(id++, "multiplayer", "A", [[2, "A"], [3, "A"], [a, "B"], [b, "B"]]));
+  }
+  const awards = monthlyAwards(matches, S, "2026-09", playersById);
+  check("identical records: best still exists", awards.best !== null, true);
+  check("identical records: NO worst crowned (tie beats arbitrary pick)", awards.worst, null);
+  check("identical records: allTied flag set", awards.allTied, true);
+  check("tie honours shared by both teammates",
+    [awards.best!.playerId, ...awards.bestTiedWith].sort(), [2, 3]);
+
+  // Bottom tie with a distinct best: Alpha 100%, Bravo & Charlie both 0%/6MP.
+  const m2: MatchRecord[] = [];
+  let id2 = 1;
+  for (let i = 0; i < 6; i++) m2.push(mk(id2++, "single", "A", [[1, "A"], [2, "B"]]));
+  for (let i = 0; i < 6; i++) m2.push(mk(id2++, "single", "A", [[1, "A"], [3, "B"]]));
+  const a2 = monthlyAwards(m2, S, "2026-09", playersById);
+  check("distinct best = Alpha (100%)", a2.best!.playerId, 1);
+  check("worst still crowned when only the bottom ties", a2.worst !== null, true);
+  check("bottom tie covers both losers",
+    [...a2.worstTiedWith, a2.worst!.playerId].sort(), [2, 3]);
+  check("allTied false when only the bottom ties", a2.allTied, false);
+}
+
 console.log("\n— Spec §24: zero-division & precision —");
 {
   const stats = computePlayerStats([], S);
@@ -257,9 +287,15 @@ console.log("\n— Integration: fresh seeded database (isolated temp file) —")
   check("admin user exists",
     ((await import("../lib/db")).getDb().prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n >= 1, true);
 
-  fs.rmSync(tmpDb, { force: true });
-  fs.rmSync(`${tmpDb}-wal`, { force: true });
-  fs.rmSync(`${tmpDb}-shm`, { force: true });
+  // Best-effort cleanup — Windows keeps the file locked until the process
+  // exits; the next run removes any leftovers before connecting anyway.
+  for (const f of [tmpDb, `${tmpDb}-wal`, `${tmpDb}-shm`]) {
+    try {
+      fs.rmSync(f, { force: true });
+    } catch {
+      /* locked — harmless */
+    }
+  }
 }
 
 console.log(`\n${failed === 0 ? "✅ ALL PASS" : "❌ FAILURES"} — ${passed} passed, ${failed} failed\n`);

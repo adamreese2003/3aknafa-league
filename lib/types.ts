@@ -67,7 +67,13 @@ export interface MonthlyAward {
 export interface MonthlySummary {
   month: string; // YYYY-MM
   best: MonthlyAward | null;
+  /** Other players whose record is identical to `best` (shared honours). */
+  bestTiedWith: number[];
   worst: MonthlyAward | null;
+  /** Other players whose record is identical to `worst` (shared skull). */
+  worstTiedWith: number[];
+  /** True when every qualifier has an identical record — no worst is crowned. */
+  allTied: boolean;
   qualifiers: number;
   totalMatches: number;
 }

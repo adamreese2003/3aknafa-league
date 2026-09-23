@@ -58,9 +58,10 @@ Players identical on all four share a rank (`=`).
 **Monthly awards** use win rate — never points — among players who meet the
 minimum monthly matches (default 5, configurable):
 
-- 🏆 Best Player of the Month = highest qualifying win rate
-- 💀 Worst Player of the Month = lowest qualifying win rate
-- Tie-breakers: more wins → more matches → more points → still identical = a tie
+- 🏆 EL ZABEER (best of the month) = highest qualifying win rate
+- 💀 3AKNOFY EL SHAHR (worst of the month) = lowest qualifying win rate
+- Tie-breakers: more wins → more matches → more points → fully identical
+  records are declared a **tie** (shared honours, no 3aknofy awarded)
 - A player with 4 matches and 0% does **not** qualify over a player with 10
   matches and 20%.
 

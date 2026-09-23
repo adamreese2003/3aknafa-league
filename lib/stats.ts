@@ -138,10 +138,11 @@ export function matchesInMonth(matches: MatchRecord[], month: string): MatchReco
 }
 
 /**
- * Monthly awards (spec §8–9): only players meeting the minimum-matches
+ * Monthly awards (spec §8–10): only players meeting the minimum-matches
  * threshold qualify. Best = top of the performance order; worst = bottom of
  * that same order (lowest win %, and among equal rates the fewer wins).
- * If fewer than one player qualifies, returns nulls.
+ * Fully identical records are a TIE (spec §10 tie-breaker 4): the best is
+ * shared and no worst player is crowned, rather than picking arbitrarily.
  */
 export function monthlyAwards(
   matches: MatchRecord[],
@@ -162,10 +163,29 @@ export function monthlyAwards(
   const toAward = (s: PlayerStats | null | undefined): MonthlyAward | null =>
     s ? { playerId: s.playerId, winPct: s.winPct, wins: s.wins, matchesPlayed: s.matchesPlayed, points: s.points } : null;
 
+  const recordKey = (s: PlayerStats) => `${s.winPct}|${s.wins}|${s.matchesPlayed}|${s.points}`;
+  const best = ordered[0];
+  const last = ordered.length >= 2 ? ordered[ordered.length - 1] : null;
+  const allTied = !!best && !!last && recordKey(last) === recordKey(best);
+
   return {
     month,
-    best: toAward(ordered[0]),
-    worst: toAward(ordered.length >= 2 ? ordered[ordered.length - 1] : null),
+    best: toAward(best),
+    bestTiedWith: best
+      ? ordered
+          .slice(1)
+          .filter((s) => recordKey(s) === recordKey(best))
+          .map((s) => s.playerId)
+      : [],
+    worst: allTied || !last ? null : toAward(last),
+    worstTiedWith:
+      !allTied && last
+        ? ordered
+            .slice(0, -1)
+            .filter((s) => recordKey(s) === recordKey(last))
+            .map((s) => s.playerId)
+        : [],
+    allTied,
     qualifiers: eligible.length,
     totalMatches: monthly.length,
   };

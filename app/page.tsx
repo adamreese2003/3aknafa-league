@@ -26,8 +26,18 @@ export default async function DashboardPage() {
     toMatchView(m, league.playerById, league.settings)
   );
 
-  const bestPlayer = awards?.best ? league.playerById.get(awards.best.playerId) : null;
-  const worstPlayer = awards?.worst ? league.playerById.get(awards.worst.playerId) : null;
+  const bestPlayers = awards?.best
+    ? [
+        league.playerById.get(awards.best.playerId)!,
+        ...awards.bestTiedWith.map((id) => league.playerById.get(id)!),
+      ].filter(Boolean)
+    : [];
+  const worstPlayers = awards?.worst
+    ? [
+        league.playerById.get(awards.worst.playerId)!,
+        ...awards.worstTiedWith.map((id) => league.playerById.get(id)!),
+      ].filter(Boolean)
+    : [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
@@ -133,15 +143,21 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {bestPlayer && awards.best && (
-              <Link href={`/players/${bestPlayer.id}`} className="glass glass-hover group relative overflow-hidden rounded-2xl p-5">
+            {bestPlayers.length > 0 && awards?.best && (
+              <Link href={`/players/${awards.best.playerId}`} className="glass glass-hover group relative overflow-hidden rounded-2xl p-5">
                 <div className="absolute -right-8 -top-8 size-36 rounded-full bg-volt-400/10 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
-                <p className="badge border-volt-400/40 text-volt-300">🏆 Best of the month</p>
+                <p className="badge border-volt-400/40 text-volt-300">
+                  🏆 EL ZABEER{bestPlayers.length > 1 ? " · TIE" : ""}
+                </p>
                 <div className="mt-4 flex items-center gap-4">
-                  <PlayerAvatar name={bestPlayer.name} photoUrl={bestPlayer.photoUrl} size={64} ring />
+                  <div className="flex -space-x-3">
+                    {bestPlayers.slice(0, 3).map((p) => (
+                      <PlayerAvatar key={p.id} name={p.name} photoUrl={p.photoUrl} size={64} ring />
+                    ))}
+                  </div>
                   <div className="min-w-0">
                     <p className="truncate font-display text-xl font-bold text-white">
-                      {bestPlayer.nickname || bestPlayer.name}
+                      {bestPlayers.map((p) => p.nickname || p.name).join(" & ")}
                     </p>
                     <p className="text-sm text-white/55">
                       {awards.best.winPct.toFixed(1)}% win rate · {awards.best.wins}W in {awards.best.matchesPlayed} matches
@@ -150,15 +166,21 @@ export default async function DashboardPage() {
                 </div>
               </Link>
             )}
-            {worstPlayer && awards.worst && (
-              <Link href={`/players/${worstPlayer.id}`} className="glass glass-hover group relative overflow-hidden rounded-2xl p-5">
+            {worstPlayers.length > 0 && awards?.worst && (
+              <Link href={`/players/${awards.worst.playerId}`} className="glass glass-hover group relative overflow-hidden rounded-2xl p-5">
                 <div className="absolute -right-8 -top-8 size-36 rounded-full bg-ember-500/10 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
-                <p className="badge border-ember-400/40 text-ember-400">💀 Worst of the month</p>
+                <p className="badge border-ember-400/40 text-ember-400">
+                  💀 3AKNOFY EL SHAHR{worstPlayers.length > 1 ? " · TIE" : ""}
+                </p>
                 <div className="mt-4 flex items-center gap-4">
-                  <PlayerAvatar name={worstPlayer.name} photoUrl={worstPlayer.photoUrl} size={64} />
+                  <div className="flex -space-x-3">
+                    {worstPlayers.slice(0, 3).map((p) => (
+                      <PlayerAvatar key={p.id} name={p.name} photoUrl={p.photoUrl} size={64} />
+                    ))}
+                  </div>
                   <div className="min-w-0">
                     <p className="truncate font-display text-xl font-bold text-white">
-                      {worstPlayer.nickname || worstPlayer.name}
+                      {worstPlayers.map((p) => p.nickname || p.name).join(" & ")}
                     </p>
                     <p className="text-sm text-white/55">
                       {awards.worst.winPct.toFixed(1)}% win rate · {awards.worst.wins}W in {awards.worst.matchesPlayed} matches

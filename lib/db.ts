@@ -3,11 +3,17 @@ import fs from "node:fs";
 import bcrypt from "bcryptjs";
 import Database from "better-sqlite3";
 
-const DATA_DIR = path.join(process.cwd(), "data");
 // LEAGUE_DB lets scripts (and tests) point at a separate database file.
-const DB_PATH = process.env.LEAGUE_DB
-  ? path.resolve(process.env.LEAGUE_DB)
-  : path.join(DATA_DIR, "league.db");
+// Resolved lazily so the env var can be set after this module is imported.
+let dbPathCache: string | null = null;
+function resolveDbPath(): string {
+  if (!dbPathCache) {
+    dbPathCache = process.env.LEAGUE_DB
+      ? path.resolve(process.env.LEAGUE_DB)
+      : path.join(process.cwd(), "data", "league.db");
+  }
+  return dbPathCache;
+}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -16,6 +22,7 @@ declare global {
 
 export function getDb(): Database.Database {
   if (globalThis.__leagueDb) return globalThis.__leagueDb;
+  const DB_PATH = resolveDbPath();
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");

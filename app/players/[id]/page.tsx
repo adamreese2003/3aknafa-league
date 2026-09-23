@@ -9,6 +9,7 @@ import { getSettings, pointsForType } from "@/lib/settings";
 import { formatDate, formatMonth } from "@/lib/view";
 import { getAllPlayers } from "@/lib/players";
 import { getAllMatches } from "@/lib/matches";
+import { MATCH_TYPE_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,31 @@ export default async function PlayerProfilePage({
   }));
 
   // Recent matches from this player's perspective
+  // Format breakdown — how much of this record was built in team play
+  const fmt = new Map<string, { played: number; wins: number }>();
+  for (const m of matches) {
+    const cur = fmt.get(m.type) ?? { played: 0, wins: 0 };
+    cur.played += 1;
+    const me = m.participants.find((p) => p.playerId === playerId);
+    if (me && me.side === m.winnerSide) cur.wins += 1;
+    fmt.set(m.type, cur);
+  }
+  const sumTypes = (types: string[]) =>
+    types.reduce(
+      (acc, t) => {
+        const v = fmt.get(t);
+        return { played: acc.played + (v?.played ?? 0), wins: acc.wins + (v?.wins ?? 0) };
+      },
+      { played: 0, wins: 0 }
+    );
+  const solo = sumTypes(["single", "best_of_3"]);
+  const team = sumTypes(["multiplayer", "multiplayer_best_of_3"]);
+  const pctOf = (v: { played: number; wins: number }) =>
+    v.played > 0 ? (v.wins / v.played) * 100 : 0;
+  const enoughSamples = team.played >= 3 && solo.played >= 3;
+  const carried = enoughSamples && pctOf(team) - pctOf(solo) >= 25;
+  const loneWolf = enoughSamples && pctOf(solo) - pctOf(team) >= 25;
+
   const recent = matches.slice(0, 10).map((m) => {
     const me = m.participants.find((p) => p.playerId === playerId)!;
     const won = me.side === m.winnerSide;
@@ -166,6 +192,76 @@ export default async function PlayerProfilePage({
             </p>
           </div>
         ))}
+      </section>
+
+      {/* Format breakdown — solo vs team */}
+      <section className="glass mt-6 rounded-2xl p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="section-title">Solo vs team matches</h2>
+          <div className="flex flex-wrap gap-2">
+            <span className="badge border-white/15 text-white/60">
+              SOLO: {solo.played} MP · {pctOf(solo).toFixed(1)}%
+            </span>
+            <span className="badge border-ice-400/40 text-ice-300">
+              TEAMS: {team.played} MP · {pctOf(team).toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        {carried && (
+          <p className="mb-4 rounded-xl border border-ember-400/30 bg-ember-400/10 px-4 py-2.5 text-sm text-ember-400">
+            🚗 Carried alert — wins almost exclusively in team matches. Somebody’s riding a mate.
+          </p>
+        )}
+        {loneWolf && (
+          <p className="mb-4 rounded-xl border border-ice-400/30 bg-ice-400/10 px-4 py-2.5 text-sm text-ice-300">
+            🐺 Lone wolf — clearly better without a teammate.
+          </p>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(
+            [
+              { key: "single", label: MATCH_TYPE_LABELS.single, team: false },
+              { key: "best_of_3", label: MATCH_TYPE_LABELS.best_of_3, team: false },
+              { key: "multiplayer", label: MATCH_TYPE_LABELS.multiplayer, team: true },
+              { key: "multiplayer_best_of_3", label: MATCH_TYPE_LABELS.multiplayer_best_of_3, team: true },
+            ] as const
+          ).map(({ key, label, team: isTeamFmt }) => {
+            const v = fmt.get(key) ?? { played: 0, wins: 0 };
+            const pct = pctOf(v);
+            return (
+              <div
+                key={key}
+                className={`rounded-xl border p-4 ${
+                  isTeamFmt ? "border-ice-400/25 bg-ice-400/[0.06]" : "border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <p className="text-[0.65rem] font-bold tracking-[0.14em] text-white/40">
+                  {label.toUpperCase()}
+                </p>
+                <p className="mt-1.5 font-display text-2xl font-bold tabular-nums text-white">
+                  {v.played}
+                  <span className="ml-1 text-xs font-semibold text-white/40">MP</span>
+                </p>
+                <p className="text-xs text-white/55">
+                  {v.wins}W · {v.played - v.wins}L ·{" "}
+                  <span className="tabular-nums">{pct.toFixed(1)}%</span>
+                </p>
+                <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <span
+                    className={`block h-full rounded-full ${
+                      isTeamFmt
+                        ? "bg-gradient-to-r from-ice-500 to-ice-300"
+                        : "bg-gradient-to-r from-volt-500 to-volt-300"
+                    }`}
+                    style={{ width: `${Math.round(pct)}%` }}
+                  />
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_1.1fr]">
