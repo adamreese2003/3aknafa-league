@@ -94,8 +94,8 @@ export function orderByPerformance(
 }
 
 /**
- * League standings (spec §13/§26): ranked by league points, then win rate,
- * wins, matches played. Players identical on every metric share a rank (tie).
+ * League standings (spec §13/§26): ranked by WIN PERCENTAGE, then wins,
+ * matches played, points. Players identical on every metric share a rank (tie).
  */
 export function rankForStandings(
   stats: Map<number, PlayerStats>,
@@ -107,10 +107,10 @@ export function rankForStandings(
     .filter((s) => s.player !== undefined)
     .sort(
       (a, b) =>
-        b.points - a.points ||
         b.winPct - a.winPct ||
         b.wins - a.wins ||
         b.matchesPlayed - a.matchesPlayed ||
+        b.points - a.points ||
         a.player!.name.localeCompare(b.player!.name)
     );
 
@@ -118,7 +118,7 @@ export function rankForStandings(
   let lastRank = 0;
   let lastKey = "";
   sorted.forEach((s, idx) => {
-    const key = `${s.points}|${s.winPct}|${s.wins}|${s.matchesPlayed}`;
+    const key = `${s.winPct}|${s.wins}|${s.matchesPlayed}|${s.points}`;
     const tied = key === lastKey;
     const rank = tied ? lastRank : idx + 1;
     lastRank = rank;

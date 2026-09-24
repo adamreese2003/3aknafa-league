@@ -52,7 +52,7 @@ All point values are configurable in **Settings** and apply instantly.
 **Win percentage** = wins / matches played × 100 (shown with one decimal,
 kept at full precision for ranking).
 
-**Standings** rank by league points → win rate → wins → matches played.
+**Standings** rank by win percentage → wins → matches played → points.
 Players identical on all four share a rank (`=`).
 
 **Monthly awards** use win rate — never points — among players who meet the

@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Generates the 3AKNAFA LEAGUE match-log workbook for the friends' group.
- * Upload the .xlsx to Google Drive → opens as a Google Sheet with all tabs,
+ * Upload the .xlsx to Google Drive â†’ opens as a Google Sheet with all tabs,
  * dropdowns and instructions intact.
  *
  * Run: npx tsx scripts/make-sheet.mts
@@ -22,28 +22,28 @@ const wb = new ExcelJS.Workbook();
 wb.creator = "3AKNAFA LEAGUE";
 
 /* ---------------- Tab 1: READ ME ---------------- */
-const readme = wb.addWorksheet("READ ME", { properties: { tabColor: "C9F73B" } });
+const readme = wb.addWorksheet("READ ME", { properties: { tabColor: { argb: "FF`C9F73B" } } });
 readme.columns = [{ width: 110 }];
 const readMeLines: [string, boolean][] = [
-  ["⚽ 3AKNAFA LEAGUE — MATCH LOG (fill one row per match, oldest first)", true],
+  ["âš½ 3AKNAFA LEAGUE â€” MATCH LOG (fill one row per match, oldest first)", true],
   ["", false],
   ["HOW IT WORKS", true],
   ["1. After every match (or at the end of the night), add ONE row in the 'Match Log' tab.", false],
-  ["2. Use the dropdowns for Type and Winner — don't type them manually.", false],
+  ["2. Use the dropdowns for Type and Winner â€” don't type them manually.", false],
   ["3. Player names MUST be copied exactly as written in the 'Players' tab (copy-paste is safest).", false],
   ["4. Multiplayer = teams. Put teammates on one side, separated by + (example: Khalfy+Baden).", false],
   ["5. Best of 3 / Multiplayer Bo3: fill the Games column like A,B,A (A won game 1, B won game 2, A won game 3).", false],
   ["   The series MUST end 2-0 or 2-1 and stop as soon as someone reaches 2 wins. Winner column must match.", false],
   ["6. Leave Location / Notes empty if you don't need them.", false],
-  ["7. Do NOT touch the 'In app?' column — that's for the admin after the match is entered in the league app.", false],
+  ["7. Do NOT touch the 'In app?' column â€” that's for the admin after the match is entered in the league app.", false],
   ["", false],
   ["THE GOLDEN RULES", true],
-  ["• A player cannot be on both teams in the same match.", false],
-  ["• A match must have a winner. If you can't agree who won, it didn't count 😄", false],
-  ["• Wrong player name = the row can't be imported — copy from the Players tab.", false],
+  ["â€¢ A player cannot be on both teams in the same match.", false],
+  ["â€¢ A match must have a winner. If you can't agree who won, it didn't count ðŸ˜„", false],
+  ["â€¢ Wrong player name = the row can't be imported â€” copy from the Players tab.", false],
   ["", false],
-  ["POINTS (the app calculates everything — this is just for reference)", true],
-  ["• Single: winner +1    • Best of 3: series winner +2    • Multiplayer: each winner +1    • Multiplayer Bo3: each winner +2", false],
+  ["POINTS (the app calculates everything â€” this is just for reference)", true],
+  ["â€¢ Single: winner +1    â€¢ Best of 3: series winner +2    â€¢ Multiplayer: each winner +1    â€¢ Multiplayer Bo3: each winner +2", false],
   ["Losers always get 0. One Best-of-3 series counts as ONE match, not three.", false],
 ];
 readMeLines.forEach(([text, bold]) => {
@@ -57,7 +57,7 @@ readMeLines.forEach(([text, bold]) => {
 readme.views = [{ state: "frozen", ySplit: 0 }];
 
 /* ---------------- Tab 2: Match Log ---------------- */
-const log = wb.addWorksheet("Match Log", { properties: { tabColor: "58D5E8" } });
+const log = wb.addWorksheet("Match Log", { properties: { tabColor: { argb: "FF`58D5E8" } } });
 const headers = [
   "Date (YYYY-MM-DD)",
   "Type",
@@ -85,10 +85,10 @@ log.columns = [
 log.views = [{ state: "frozen", ySplit: 1 }];
 
 const exampleRows = [
-  ["2026-09-23", "Single", "Khalfy", "Zingo", "A", "", "The Den", "EXAMPLE ROW — delete before use", ""],
-  ["2026-09-23", "Best of 3", "Khalfy", "El Natra", "A", "A,B,A", "The Den", "EXAMPLE ROW — delete before use", ""],
-  ["2026-09-23", "Multiplayer", "Khalfy+Baden", "El Natra+Zingo", "B", "", "The Den", "EXAMPLE ROW — delete before use", ""],
-  ["2026-09-23", "Multiplayer Bo3", "El Tafa+El Natra", "Benloty+Twinkies", "A", "A,A", "The Den", "EXAMPLE ROW — delete before use", ""],
+  ["2026-09-23", "Single", "Khalfy", "Zingo", "A", "", "The Den", "EXAMPLE ROW â€” delete before use", ""],
+  ["2026-09-23", "Best of 3", "Khalfy", "El Natra", "A", "A,B,A", "The Den", "EXAMPLE ROW â€” delete before use", ""],
+  ["2026-09-23", "Multiplayer", "Khalfy+Baden", "El Natra+Zingo", "B", "", "The Den", "EXAMPLE ROW â€” delete before use", ""],
+  ["2026-09-23", "Multiplayer Bo3", "El Tafa+El Natra", "Benloty+Twinkies", "A", "A,A", "The Den", "EXAMPLE ROW â€” delete before use", ""],
 ];
 exampleRows.forEach((r) => {
   const row = log.addRow(r);
@@ -100,8 +100,15 @@ exampleRows.forEach((r) => {
   });
 });
 
-// Dropdowns for rows 5–500 (examples live in rows 2–5).
-log.dataValidations.add("B5:B500", {
+// exceljs 4.4 ships dataValidations at runtime but not in its types.
+type ValidationsHolder = {
+  dataValidations: { add: (range: string, rule: Record<string, unknown>) => void };
+};
+const addValidation = (range: string, rule: Record<string, unknown>) =>
+  (log as unknown as ValidationsHolder).dataValidations.add(range, rule);
+
+// Dropdowns for rows 5â€“500 (examples live in rows 2â€“5).
+addValidation("B5:B500", {
   type: "list",
   allowBlank: true,
   formulae: [`"${TYPES.join(",")}"`],
@@ -109,7 +116,7 @@ log.dataValidations.add("B5:B500", {
   errorTitle: "Pick from the list",
   error: "Choose one of the four match types.",
 });
-log.dataValidations.add("E5:E500", {
+addValidation("E5:E500", {
   type: "list",
   allowBlank: true,
   formulae: ['"A,B"'],
@@ -121,7 +128,7 @@ log.dataValidations.add("E5:E500", {
 log.getColumn(1).numFmt = "yyyy-mm-dd";
 
 /* ---------------- Tab 3: Players ---------------- */
-const roster = wb.addWorksheet("Players", { properties: { tabColor: "F05636" } });
+const roster = wb.addWorksheet("Players", { properties: { tabColor: { argb: "FF`F05636" } } });
 roster.columns = [{ width: 28 }, { width: 26 }, { width: 12 }];
 const rosterHeader = roster.addRow(["Exact name to use", "Full name", "Club"]);
 rosterHeader.eachCell((cell) => {

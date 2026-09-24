@@ -146,9 +146,9 @@ console.log("\n— Spec §10: tie-breakers —");
   check("order: Foxtrot 100% first, then equal-75% pair", order, [6, 1, 2, 3]);
   check("equal win% → more wins first (Alpha before Bravo)", order.indexOf(1) < order.indexOf(2), true);
   const standings = rankForStandings(stats, P);
-  check("standings leader by points = Alpha (6 pts)", standings[0].playerId, 1);
-  check("Foxtrot (3 pts, 100%) beats Bravo (3 pts, 75%) on the win-rate tiebreak",
-    [standings[1].playerId, standings[2].playerId], [6, 2]);
+  check("standings leader by win% = Foxtrot (100% despite fewer points)", standings[0].playerId, 6);
+  check("equal win% → Alpha (6 wins) above Bravo (3 wins)",
+    [standings[1].playerId, standings[2].playerId], [1, 2]);
 }
 
 console.log("\n— Spec §10-4: identical records are a TIE —");
