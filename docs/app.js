@@ -38,6 +38,11 @@ const PHOTO_MAP = {
   zingo: "zingo.jpeg",
 };
 
+const photoFor = (name) => {
+  const file = PHOTO_MAP[String(name || "").toLowerCase()];
+  return file ? `assets/players/${file}` : null;
+};
+
 const FALLBACK_ROSTER = [
   ["Baden", "Baden Ahmed Baden", "Real Madrid"],
   ["El 3agoz", "El 3agoz", "Barcelona"],
@@ -132,7 +137,36 @@ const TYPE_MAP = {
 };
 
 async function loadLeague() {
-  // Players tab first; fall back to the built-in roster.
+  // 1) Published snapshot from the admin app (docs/data/league-data.json).
+  try {
+    const res = await fetch("data/league-data.json", { cache: "no-cache" });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && Array.isArray(j.players) && Array.isArray(j.matches) && j.matches.length >= 0) {
+        const players = j.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          nickname: p.nickname || null,
+          club: p.club || null,
+          photo: photoFor(p.nickname && p.nickname !== p.name ? p.nickname : p.name),
+        }));
+        const matches = j.matches
+          .map((m, i) => ({ ...m, id: m.id || i + 1 }))
+          .sort((a, b) => (a.date === b.date ? b.id - a.id : a.date < b.date ? 1 : -1));
+        return {
+          players,
+          matches,
+          rejected: [],
+          from: "snapshot",
+          fetchedAt: new Date(j.exportedAt || Date.now()),
+        };
+      }
+    }
+  } catch (_) {
+    /* fall through to the live sheet */
+  }
+
+  // 2) Live Google Sheet fallback (friends' remote entries).
   let rosterRows = FALLBACK_ROSTER.map((r) => [r[0], r[1], r[2]]);
   try {
     const parsed = parseCSV(await fetchCSV("Players"));
@@ -225,7 +259,7 @@ async function loadLeague() {
     }
   }
   matches.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
-  return { players, matches, rejected, fetchedAt: new Date() };
+  return { players, matches, rejected, from: "sheet", fetchedAt: new Date() };
 }
 
 /* ---------------- statistics engine ---------------- */
@@ -1172,7 +1206,8 @@ async function render() {
     try {
       LEAGUE = await loadLeague();
       document.getElementById("dataStamp").textContent =
-        "updated " + LEAGUE.fetchedAt.toLocaleTimeString();
+        (LEAGUE.from === "snapshot" ? "published " : "sheet updated ") +
+        LEAGUE.fetchedAt.toLocaleString();
     } catch (err) {
       app.innerHTML = errorHTML(err);
       return;

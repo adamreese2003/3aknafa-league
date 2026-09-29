@@ -1,0 +1,980 @@
+{
+  "exportedAt": "2026-09-29T20:38:43.836Z",
+  "source": "3AKNAFA LEAGUE admin app",
+  "settings": {
+    "leagueName": "3AKNAFA LEAGUE",
+    "pointsSingle": 1,
+    "pointsBestOf3": 2,
+    "pointsMultiplayer": 1,
+    "pointsMultiplayerBo3": 2,
+    "minMonthlyMatches": 5,
+    "monthlyAwardsEnabled": true
+  },
+  "players": [
+    {
+      "id": 1,
+      "name": "Baden Ahmed Baden",
+      "nickname": "Baden",
+      "club": "Real Madrid",
+      "active": true
+    },
+    {
+      "id": 9,
+      "name": "Benloty",
+      "nickname": "Benloty",
+      "club": "Juventus",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "El 3agoz",
+      "nickname": "El 3agoz",
+      "club": "Barcelona",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "El A2r3",
+      "nickname": "El A2r3",
+      "club": "Liverpool",
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "El Natra",
+      "nickname": "El Natra",
+      "club": "Man City",
+      "active": true
+    },
+    {
+      "id": 5,
+      "name": "El Tafa",
+      "nickname": "El Tafa",
+      "club": "Bayern",
+      "active": true
+    },
+    {
+      "id": 6,
+      "name": "Khalfy",
+      "nickname": "Khalfy",
+      "club": "PSG",
+      "active": true
+    },
+    {
+      "id": 7,
+      "name": "Shb Zayed",
+      "nickname": "Shb Zayed",
+      "club": "Chelsea",
+      "active": true
+    },
+    {
+      "id": 8,
+      "name": "Twinkies",
+      "nickname": "Twinkies",
+      "club": "Arsenal",
+      "active": true
+    },
+    {
+      "id": 10,
+      "name": "Zingo",
+      "nickname": "Zingo",
+      "club": "Inter",
+      "active": true
+    }
+  ],
+  "matches": [
+    {
+      "id": 28,
+      "type": "multiplayer",
+      "date": "2026-09-06",
+      "winner": "A",
+      "games": [],
+      "A": [
+        2,
+        10
+      ],
+      "B": [
+        1,
+        6
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 6,
+      "type": "multiplayer",
+      "date": "2026-09-23",
+      "winner": "B",
+      "games": [],
+      "A": [
+        3,
+        8
+      ],
+      "B": [
+        4,
+        5
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 7,
+      "type": "multiplayer",
+      "date": "2026-09-23",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        5
+      ],
+      "B": [
+        2,
+        10
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 8,
+      "type": "multiplayer",
+      "date": "2026-09-23",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        5
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 9,
+      "type": "multiplayer",
+      "date": "2026-09-23",
+      "winner": "A",
+      "games": [],
+      "A": [
+        2,
+        10
+      ],
+      "B": [
+        4,
+        5
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 10,
+      "type": "multiplayer",
+      "date": "2026-09-23",
+      "winner": "A",
+      "games": [],
+      "A": [
+        2,
+        10
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 11,
+      "type": "multiplayer",
+      "date": "2026-09-23",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        5
+      ],
+      "B": [
+        2,
+        10
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 14,
+      "type": "single",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        2
+      ],
+      "B": [
+        10
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 15,
+      "type": "single",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        2
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 16,
+      "type": "single",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        5
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 17,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        7,
+        10
+      ],
+      "B": [
+        4,
+        5
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 18,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "B",
+      "games": [],
+      "A": [
+        7,
+        10
+      ],
+      "B": [
+        2,
+        5
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 19,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        2,
+        5
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 20,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        1,
+        6
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 21,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "B",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        5,
+        7
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 22,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        1,
+        2
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 23,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        6,
+        10
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 24,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        1,
+        4
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 25,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "B",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        2,
+        6
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 26,
+      "type": "multiplayer",
+      "date": "2026-09-25",
+      "winner": "A",
+      "games": [],
+      "A": [
+        1,
+        10
+      ],
+      "B": [
+        2,
+        6
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 27,
+      "type": "multiplayer",
+      "date": "2026-09-26",
+      "winner": "A",
+      "games": [],
+      "A": [
+        2,
+        10
+      ],
+      "B": [
+        5,
+        7
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 29,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        2,
+        10
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 30,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        1,
+        6
+      ],
+      "location": "buzz",
+      "notes": null
+    },
+    {
+      "id": 31,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "B",
+      "games": [],
+      "A": [
+        2,
+        10
+      ],
+      "B": [
+        5,
+        7
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 32,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        1,
+        6
+      ],
+      "B": [
+        5,
+        7
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 33,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        1,
+        6
+      ],
+      "B": [
+        2,
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 34,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        7
+      ],
+      "B": [
+        1,
+        6
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 35,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        2,
+        5
+      ],
+      "B": [
+        4,
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 36,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        2,
+        4
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 37,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        8
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 38,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        2,
+        5
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 39,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        8
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 40,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        5
+      ],
+      "B": [
+        2,
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 41,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        2,
+        4
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 42,
+      "type": "multiplayer",
+      "date": "2026-09-27",
+      "winner": "B",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        2,
+        5
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 43,
+      "type": "multiplayer",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "location": "r2",
+      "notes": null
+    },
+    {
+      "id": 44,
+      "type": "multiplayer",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        3
+      ],
+      "location": "r2",
+      "notes": "amr"
+    },
+    {
+      "id": 45,
+      "type": "multiplayer",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "location": "r2",
+      "notes": null
+    },
+    {
+      "id": 46,
+      "type": "multiplayer",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        8
+      ],
+      "location": "r2",
+      "notes": "amr"
+    },
+    {
+      "id": 47,
+      "type": "single",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        3
+      ],
+      "B": [
+        5
+      ],
+      "location": "r2",
+      "notes": null
+    },
+    {
+      "id": 48,
+      "type": "single",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 49,
+      "type": "single",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        8
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 50,
+      "type": "single",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 51,
+      "type": "single",
+      "date": "2026-09-28",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        8
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 52,
+      "type": "single",
+      "date": "2026-09-28",
+      "winner": "B",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        8
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 59,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "dabsha",
+      "notes": null
+    },
+    {
+      "id": 60,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 61,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "dabsha",
+      "notes": null
+    },
+    {
+      "id": 62,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "dabsha",
+      "notes": null
+    },
+    {
+      "id": 63,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "dabsha",
+      "notes": null
+    },
+    {
+      "id": 64,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "dabsha",
+      "notes": null
+    },
+    {
+      "id": 65,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 66,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 67,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "B",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 68,
+      "type": "single",
+      "date": "2026-09-29",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": "san siro",
+      "notes": null
+    }
+  ]
+}
