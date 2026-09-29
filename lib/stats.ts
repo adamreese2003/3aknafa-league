@@ -243,3 +243,157 @@ export function formatWinPct(winPct: number): string {
 export function matchPointsLabel(type: MatchType, settings: LeagueSettings): number {
   return pointsForType(settings, type);
 }
+
+/* ---------------- streaks ---------------- */
+
+export interface StreakInfo {
+  /** Trailing streak: "W" or "L" with its length; null when no matches. */
+  current: { type: "W" | "L"; count: number } | null;
+  bestWinStreak: number;
+  worstLossStreak: number;
+}
+
+/** Per-player win/loss streaks over matches ordered oldest → newest. */
+export function computeStreaks(matches: MatchRecord[]): Map<number, StreakInfo> {
+  const chrono = [...matches].sort((a, b) =>
+    a.playedAt === b.playedAt ? a.id - b.id : a.playedAt < b.playedAt ? -1 : 1
+  );
+  const seqs = new Map<number, ("W" | "L")[]>();
+  for (const m of chrono) {
+    for (const p of m.participants) {
+      const seq = seqs.get(p.playerId) ?? [];
+      seq.push(p.side === m.winnerSide ? "W" : "L");
+      seqs.set(p.playerId, seq);
+    }
+  }
+  const out = new Map<number, StreakInfo>();
+  for (const [playerId, seq] of seqs) {
+    let bestW = 0;
+    let worstL = 0;
+    let runType: "W" | "L" = seq[0];
+    let runLen = 0;
+    for (const r of seq) {
+      if (r === runType) runLen++;
+      else {
+        if (runType === "W") bestW = Math.max(bestW, runLen);
+        else worstL = Math.max(worstL, runLen);
+        runType = r;
+        runLen = 1;
+      }
+    }
+    if (runType === "W") bestW = Math.max(bestW, runLen);
+    else worstL = Math.max(worstL, runLen);
+    const last = seq[seq.length - 1];
+    let currentCount = 0;
+    for (let i = seq.length - 1; i >= 0 && seq[i] === last; i--) currentCount++;
+    out.set(playerId, {
+      current: { type: last, count: currentCount },
+      bestWinStreak: bestW,
+      worstLossStreak: worstL,
+    });
+  }
+  return out;
+}
+
+/* ---------------- head-to-head ---------------- */
+
+export interface H2HFormatSplit {
+  a: number;
+  b: number;
+}
+
+export interface HeadToHead {
+  aId: number;
+  bId: number;
+  aWins: number;
+  bWins: number;
+  aPoints: number;
+  bPoints: number;
+  /** Trailing duel streak from a's perspective. */
+  currentDuel: { winnerId: number; count: number } | null;
+  longestAStreak: number;
+  longestBStreak: number;
+  byFormat: Partial<Record<MatchType, H2HFormatSplit>>;
+  /** Their meetings, newest first. */
+  meetings: MatchRecord[];
+}
+
+/** All-time record between two players (matches where they faced each other). */
+export function headToHead(
+  matches: MatchRecord[],
+  aId: number,
+  bId: number,
+  settings: LeagueSettings
+): HeadToHead {
+  const meetings = matches
+    .filter((m) => {
+      const aSide = m.participants.find((p) => p.playerId === aId)?.side;
+      const bSide = m.participants.find((p) => p.playerId === bId)?.side;
+      return aSide && bSide && aSide !== bSide;
+    })
+    .sort((x, y) => (x.playedAt === y.playedAt ? y.id - x.id : x.playedAt < y.playedAt ? 1 : -1));
+
+  let aWins = 0;
+  let bWins = 0;
+  let aPoints = 0;
+  let bPoints = 0;
+  const byFormat: Partial<Record<MatchType, H2HFormatSplit>> = {};
+  const results: ("A" | "B")[] = []; // from a's perspective, chronological
+
+  // results must be chronological (oldest first) for streak math.
+  for (const m of [...meetings].reverse()) {
+    const aSide = m.participants.find((p) => p.playerId === aId)!.side;
+    const aWon = aSide === m.winnerSide;
+    const pts = pointsForType(settings, m.type);
+    if (aWon) {
+      aWins++;
+      aPoints += pts;
+      results.push("A");
+    } else {
+      bWins++;
+      bPoints += pts;
+      results.push("B");
+    }
+    const fmt = (byFormat[m.type] = byFormat[m.type] || { a: 0, b: 0 });
+    if (aWon) fmt.a++;
+    else fmt.b++;
+  }
+
+  let longestA = 0;
+  let longestB = 0;
+  let runType: "A" | "B" | null = null;
+  let runLen = 0;
+  for (const r of [...results].reverse()) {
+    if (r === runType) runLen++;
+    else {
+      if (runType === "A") longestA = Math.max(longestA, runLen);
+      if (runType === "B") longestB = Math.max(longestB, runLen);
+      runType = r;
+      runLen = 1;
+    }
+  }
+  if (runType === "A") longestA = Math.max(longestA, runLen);
+  if (runType === "B") longestB = Math.max(longestB, runLen);
+
+  let currentDuel: HeadToHead["currentDuel"] = null;
+  if (results.length) {
+    const last = results[results.length - 1];
+    let count = 0;
+    for (let i = results.length - 1; i >= 0 && results[i] === last; i--) count++;
+    currentDuel = { winnerId: last === "A" ? aId : bId, count };
+  }
+
+  return {
+    aId,
+    bId,
+    aWins,
+    bWins,
+    aPoints,
+    bPoints,
+    currentDuel,
+    longestAStreak: longestA,
+    longestBStreak: longestB,
+    byFormat,
+    meetings,
+  };
+}

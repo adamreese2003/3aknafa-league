@@ -372,6 +372,102 @@ function formatBreakdown(matches, playerId) {
   };
 }
 
+/* ---------------- streaks & head-to-head ---------------- */
+
+function computeStreaks(matches) {
+  const chrono = [...matches].sort((a, b) =>
+    a.date === b.date ? a.id - b.id : a.date < b.date ? -1 : 1
+  );
+  const seqs = new Map();
+  for (const m of chrono) {
+    for (const side of ["A", "B"]) {
+      for (const id of m[side]) {
+        const seq = seqs.get(id) || [];
+        seq.push(side === m.winner ? "W" : "L");
+        seqs.set(id, seq);
+      }
+    }
+  }
+  const out = new Map();
+  for (const [id, seq] of seqs) {
+    let bestW = 0;
+    let worstL = 0;
+    let runType = seq[0];
+    let runLen = 0;
+    for (const r of seq) {
+      if (r === runType) runLen++;
+      else {
+        if (runType === "W") bestW = Math.max(bestW, runLen);
+        else worstL = Math.max(worstL, runLen);
+        runType = r;
+        runLen = 1;
+      }
+    }
+    if (runType === "W") bestW = Math.max(bestW, runLen);
+    else worstL = Math.max(worstL, runLen);
+    const last = seq[seq.length - 1];
+    let count = 0;
+    for (let i = seq.length - 1; i >= 0 && seq[i] === last; i--) count++;
+    out.set(id, { current: { type: last, count }, bestWinStreak: bestW, worstLossStreak: worstL });
+  }
+  return out;
+}
+
+function headToHead(matches, aId, bId) {
+  const meetings = matches
+    .filter((m) => {
+      const aSide = m.A.includes(aId) ? "A" : m.B.includes(aId) ? "B" : null;
+      const bSide = m.A.includes(bId) ? "A" : m.B.includes(bId) ? "B" : null;
+      return aSide && bSide && aSide !== bSide;
+    })
+    .sort((x, y) => (x.date === y.date ? y.id - x.id : x.date < y.date ? 1 : -1));
+
+  let aWins = 0;
+  let bWins = 0;
+  const byFormat = {};
+  const results = []; // from a's perspective, oldest-first for streak math
+  for (const m of [...meetings].reverse()) {
+    const aSide = m.A.includes(aId) ? "A" : "B";
+    const aWon = aSide === m.winner;
+    if (aWon) {
+      aWins++;
+      results.push("A");
+    } else {
+      bWins++;
+      results.push("B");
+    }
+    const f = (byFormat[m.type] = byFormat[m.type] || { a: 0, b: 0 });
+    if (aWon) f.a++;
+    else f.b++;
+  }
+
+  let longestA = 0;
+  let longestB = 0;
+  let runType = null;
+  let runLen = 0;
+  for (const r of [...results].reverse()) {
+    if (r === runType) runLen++;
+    else {
+      if (runType === "A") longestA = Math.max(longestA, runLen);
+      if (runType === "B") longestB = Math.max(longestB, runLen);
+      runType = r;
+      runLen = 1;
+    }
+  }
+  if (runType === "A") longestA = Math.max(longestA, runLen);
+  if (runType === "B") longestB = Math.max(longestB, runLen);
+
+  let currentDuel = null;
+  if (results.length) {
+    const last = results[results.length - 1];
+    let count = 0;
+    for (let i = results.length - 1; i >= 0 && results[i] === last; i--) count++;
+    currentDuel = { winnerId: last === "A" ? aId : bId, count };
+  }
+
+  return { aId, bId, aWins, bWins, currentDuel, longestAStreak: longestA, longestBStreak: longestB, byFormat, meetings };
+}
+
 /* ---------------- rendering ---------------- */
 
 const esc = (s) =>
@@ -393,12 +489,14 @@ function avatar(p, cls = "") {
 }
 
 function navHTML(route) {
+  const path = (route || "#/").split("?")[0];
   const links = [
-    ["#/", "Dashboard", route === "#/" || route === ""],
-    ["#/standings", "Standings", route === "#/standings"],
-    ["#/players", "Players", route.startsWith("#/players")],
-    ["#/matches", "Matches", route === "#/matches"],
-    ["#/awards", "Awards", route === "#/awards"],
+    ["#/", "Dashboard", path === "#/" || path === ""],
+    ["#/standings", "Standings", path === "#/standings"],
+    ["#/players", "Players", path.startsWith("#/players")],
+    ["#/matches", "Matches", path === "#/matches"],
+    ["#/h2h", "Head-to-Head", path === "#/h2h"],
+    ["#/awards", "Awards", path === "#/awards"],
   ];
   return links
     .map(([href, label, active]) => `<a href="${href}" class="${active ? "active" : ""}">${label}</a>`)
@@ -500,6 +598,25 @@ function pageDashboard(data) {
   const totalPoints = [...stats.values()].reduce((n, s) => n + s.points, 0);
   const best = [...stats.values()].sort((a, b) => b.winPct - a.winPct || b.mp - a.mp)[0];
 
+  const streaks = computeStreaks(matches);
+  const streakChips = players
+    .map((p) => ({ p, s: streaks.get(p.id) }))
+    .filter((x) => x.s && x.s.current)
+    .sort((x, y) => {
+      const a = x.s.current;
+      const b = y.s.current;
+      if (a.type !== b.type) return a.type === "W" ? -1 : 1;
+      return b.count - a.count;
+    })
+    .slice(0, 6)
+    .map(({ p, s }) => {
+      const hot = s.current.type === "W";
+      return `<a href="#/players/${p.id}" class="badge ${hot ? "volt" : "ember"}" style="padding:6px 12px">${
+        hot ? "🔥" : "❄️"
+      } ${esc(displayName(p))} · ${s.current.count}${hot ? "W" : "L"}</a>`;
+    })
+    .join("");
+
   const awardCard = (kind, s, tied) => {
     if (!s)
       return `<div class="glass award-empty"><span class="icon">${kind === "best" ? "🏆" : "💀"}</span>
@@ -553,6 +670,18 @@ function pageDashboard(data) {
       <div class="glass stat-card"><p class="stat-value ice">${totalPoints}</p><p class="stat-label">Total points</p><p class="stat-sub">earned all season</p></div>
     </div>
 
+    ${
+      streakChips
+        ? `<section style="margin-bottom:44px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px">
+              <h2 class="section-title">Streak watch <span style="color:var(--faint)">· hottest first</span></h2>
+              <a href="#/standings" style="color:var(--volt-300);font-size:.85rem;font-weight:600">Standings →</a>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">${streakChips}</div>
+          </section>`
+        : ""
+    }
+
     <div class="award-grid">
       ${awardCard("best", awards.best, awards.bestTied)}
       ${awardCard("worst", awards.worst, awards.worstTied)}
@@ -579,6 +708,24 @@ function pageDashboard(data) {
 
 function pageStandings(data, sortKey, sortAsc) {
   const standings = computeStandings(data.players, computeStats(data.matches));
+  const streaks = computeStreaks(data.matches);
+  const chipHTML = data.players
+    .map((p) => ({ p, s: streaks.get(p.id) }))
+    .filter((x) => x.s && x.s.current)
+    .sort((x, y) => {
+      const a = x.s.current;
+      const b = y.s.current;
+      if (a.type !== b.type) return a.type === "W" ? -1 : 1;
+      return b.count - a.count;
+    })
+    .slice(0, 8)
+    .map(({ p, s }) => {
+      const hot = s.current.type === "W";
+      return `<a href="#/players/${p.id}" class="badge ${hot ? "volt" : "ember"}" style="padding:6px 12px">${
+        hot ? "🔥" : "❄️"
+      } ${esc(displayName(p))} · ${s.current.count}${hot ? "W" : "L"}</a>`;
+    })
+    .join("");
   return `<div class="wrap page">
     <div class="page-head">
       <p class="eyebrow">League table</p>
@@ -586,6 +733,14 @@ function pageStandings(data, sortKey, sortAsc) {
       <p>Ranked by total wins — consistency across the season is king — with win rate as the tiebreaker. Single win 1 pt · Bo3 win 2 pts · multiplayer win 1 pt each · MP Bo3 2 pts each — points still show in the Pts column. Tap a column to sort.</p>
     </div>
     <div id="tableHost">${standingsTableHTML(standings, data.players, sortKey, sortAsc)}</div>
+    ${
+      chipHTML
+        ? `<section class="glass" style="margin-top:22px;padding:20px 22px;border-radius:18px">
+            <h2 class="section-title" style="margin-bottom:14px">Current streaks</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">${chipHTML}</div>
+          </section>`
+        : ""
+    }
   </div>`;
 }
 
@@ -636,6 +791,20 @@ function pageProfile(data, playerId) {
   const rank = standings.find((r) => r.id === p.id);
   const bd = formatBreakdown(all, p.id);
   const byId = new Map(data.players.map((x) => [x.id, x]));
+  const streak = computeStreaks(all).get(p.id) || null;
+  const streakHTML =
+    streak && streak.current
+      ? `<p style="margin:10px 0 0">
+          <span class="badge ${streak.current.type === "W" ? "volt" : "ember"}">${
+            streak.current.type === "W" ? "🔥" : "❄️"
+          } ${streak.current.count}${streak.current.type === "W" ? "-match win streak" : "-match losing streak"}</span>
+          <span style="margin-left:8px;font-size:.75rem;color:var(--faint)">best ${streak.bestWinStreak}W · worst ${streak.worstLossStreak}L</span>
+        </p>`
+      : "";
+  const h2hLink =
+    stats.mp > 0
+      ? `<a href="#/h2h?a=${p.id}" style="display:inline-block;margin-top:12px;color:var(--volt-300);font-size:.85rem;font-weight:600">⚔️ Head-to-head records →</a>`
+      : "";
 
   const months = [...new Set(mine.map((m) => monthKey(m.date)))].sort().reverse();
   const monthlyRows = months
@@ -686,6 +855,8 @@ function pageProfile(data, playerId) {
           <span class="badge volt">${rank && stats.mp ? (rank.rank === 1 ? "👑 " : "") + "Rank #" + rank.rank + " of " + standings.filter((r) => r.mp > 0).length : "No matches yet"}</span>
           <h1>${esc(displayName(p))}</h1>
           <p class="sub">${esc(p.name)}${p.club ? " · " + esc(p.club) : ""}</p>
+          ${streakHTML}
+          ${h2hLink}
         </div>
       </div>
     </section>
@@ -853,6 +1024,95 @@ function pageAwards(data) {
   </div>`;
 }
 
+function pageH2H(data, params) {
+  const byId = new Map(data.players.map((p) => [p.id, p]));
+  const aId = Number(params.get("a")) || null;
+  const bId = Number(params.get("b")) || null;
+  const pa = aId ? byId.get(aId) : null;
+  const pb = bId ? byId.get(bId) : null;
+  const opts = (sel) =>
+    data.players
+      .map(
+        (p) =>
+          `<option value="${p.id}" ${String(p.id) === sel ? "selected" : ""}>${esc(
+            displayName(p)
+          )}</option>`
+      )
+      .join("");
+
+  const picker = `<div class="glass filters" style="grid-template-columns:1fr 1fr;max-width:640px">
+    <div class="field"><label for="h2hA">Player A</label><select id="h2hA"><option value="">— select —</option>${opts(
+      aId ? String(aId) : ""
+    )}</select></div>
+    <div class="field"><label for="h2hB">Player B</label><select id="h2hB"><option value="">— select —</option>${opts(
+      bId ? String(bId) : ""
+    )}</select></div>
+  </div>`;
+
+  const body =
+    pa && pb && pa.id !== pb.id
+      ? (() => {
+          const h = headToHead(data.matches, pa.id, pb.id);
+          const duel = h.currentDuel
+            ? `🔥 ${esc(displayName(byId.get(h.currentDuel.winnerId)))} won the last ${
+                h.currentDuel.count >= 2 ? h.currentDuel.count + " meetings" : "meeting"
+              } in a row · longest runs: ${esc(displayName(pa))} ${h.longestAStreak}W · ${esc(
+                displayName(pb)
+              )} ${h.longestBStreak}W`
+            : null;
+          const fmtCards = Object.keys(TYPE_LABELS)
+            .map((t) => {
+              const s = h.byFormat[t];
+              return `<div class="fmt-card ${t.includes("multiplayer") ? "team" : "solo"}">
+                <small>${TYPE_LABELS[t]}</small>
+                <b>${s ? s.a + "–" + s.b : "–"}</b>
+                <p>${s ? "wins: " + esc(displayName(pa)) + " first" : "never played"}</p>
+              </div>`;
+            })
+            .join("");
+          const list = h.meetings.length
+            ? `<div class="match-list">${h.meetings
+                .map((m) => matchCardHTML(m, data.players))
+                .join("")}</div>`
+            : `<div class="glass empty-state"><span class="icon">⚔️</span><h3>No meetings yet</h3><p>A rivalry waiting to happen.</p></div>`;
+          return `<section class="glass" style="padding:28px;border-radius:22px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+              <a href="#/players/${pa.id}" style="display:flex;align-items:center;gap:14px;min-width:0">
+                ${avatar(pa, "lg ring")}
+                <div><b style="font-family:var(--font-display);font-size:1.15rem">${esc(displayName(pa))}</b>
+                <p class="award-pct" style="color:var(--volt-300)">${h.aWins}</p>
+                <small style="color:var(--faint)">wins</small></div>
+              </a>
+              <div style="text-align:center">
+                <p style="font-family:var(--font-display);font-size:1.6rem;color:rgba(255,255,255,.25);margin:0">VS</p>
+                <small style="color:var(--muted)">${h.meetings.length} meetings</small>
+              </div>
+              <a href="#/players/${pb.id}" style="display:flex;align-items:center;gap:14px;min-width:0;flex-direction:row-reverse;text-align:right">
+                ${avatar(pb, "lg")}
+                <div><b style="font-family:var(--font-display);font-size:1.15rem">${esc(displayName(pb))}</b>
+                <p class="award-pct" style="color:var(--ice-300)">${h.bWins}</p>
+                <small style="color:var(--faint)">wins</small></div>
+              </a>
+            </div>
+            ${duel ? `<p style="margin:18px 0 0;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:.85rem;color:rgba(255,255,255,.7)">${duel}</p>` : ""}
+          </section>
+          <div class="fmt-grid" style="margin-top:22px">${fmtCards}</div>
+          <h2 class="section-title" style="margin:34px 0 16px">Their meetings <span style="color:var(--faint)">· newest first</span></h2>
+          ${list}`;
+        })()
+      : `<div class="glass empty-state" style="margin-top:22px"><span class="icon">⚔️</span><h3>Pick two players</h3><p>Their all-time rivalry record shows up here.</p></div>`;
+
+  return `<div class="wrap page">
+    <div class="page-head">
+      <p class="eyebrow">Settle it on the screen</p>
+      <h1>Head-to-head</h1>
+      <p>All-time records between any two players — every meeting, every format, streaks included.</p>
+    </div>
+    ${picker}
+    ${body}
+  </div>`;
+}
+
 function pageNotFound() {
   return `<div class="wrap page"><div class="glass empty-state"><span class="icon">🤷</span>
     <h3>Page not found</h3><p><a href="#/" style="color:var(--volt-300)">Back to the dashboard</a></p></div></div>`;
@@ -900,7 +1160,9 @@ function applyMatchFilters(data) {
 let LEAGUE = null;
 
 async function render() {
-  const route = location.hash || "#/";
+  const raw = location.hash || "#/";
+  const route = raw.split("?")[0];
+  const params = new URLSearchParams(raw.split("?")[1] || "");
   document.getElementById("nav").innerHTML = navHTML(route === "" ? "#/" : route);
   document.getElementById("navMobile").innerHTML = navHTML(route === "" ? "#/" : route);
   const app = document.getElementById("app");
@@ -924,6 +1186,7 @@ async function render() {
   else if (route === "#/players") html = pagePlayers(LEAGUE);
   else if (base === "#/players" && param) html = pageProfile(LEAGUE, Number(param));
   else if (route === "#/matches") html = pageMatches(LEAGUE);
+  else if (route === "#/h2h") html = pageH2H(LEAGUE, params);
   else if (route === "#/awards") html = pageAwards(LEAGUE);
   else html = pageNotFound();
 

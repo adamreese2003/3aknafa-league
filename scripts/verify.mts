@@ -4,6 +4,8 @@
  */
 import {
   computePlayerStats,
+  computeStreaks,
+  headToHead,
   monthlyAwards,
   orderByPerformance,
   rankForStandings,
@@ -179,6 +181,37 @@ console.log("\n— Spec §10-4: identical records are a TIE —");
   check("bottom tie covers both losers",
     [...a2.worstTiedWith, a2.worst!.playerId].sort(), [2, 3]);
   check("allTied false when only the bottom ties", a2.allTied, false);
+}
+
+console.log("\n— Streaks & head-to-head —");
+{
+  // Alpha: W W L W W W (chronological). Bravo takes the L + a win over Echo.
+  const matches: MatchRecord[] = [];
+  let id = 1;
+  const seq: ("A" | "B")[] = ["A", "A", "B", "A", "A", "A"];
+  for (const winner of seq) {
+    matches.push(mk(id++, "single", winner, [[1, "A"], [3, "B"]], "2026-09-0" + id));
+  }
+  matches.push(mk(id++, "single", "A", [[2, "A"], [3, "B"]], "2026-09-10"));
+
+  const streaks = computeStreaks(matches);
+  const a = streaks.get(1)!;
+  check("Alpha current streak 3W", [a.current!.type, a.current!.count], ["W", 3]);
+  check("Alpha best win streak 3", a.bestWinStreak, 3);
+  check("Alpha worst loss streak 1", a.worstLossStreak, 1);
+  const c = streaks.get(3)!;
+  check("Charlie current streak 4L", [c.current!.type, c.current!.count], ["L", 4]);
+
+  const h2h = headToHead(matches, 1, 3, S);
+  check("h2h Alpha 5 – 1 Charlie", [h2h.aWins, h2h.bWins], [5, 1]);
+  check("h2h points 5–1 (Charlie won one)", [h2h.aPoints, h2h.bPoints], [5, 1]);
+  check("h2h current duel: Alpha 3 in a row", [h2h.currentDuel!.winnerId, h2h.currentDuel!.count], [1, 3]);
+  check("h2h longest runs 3W vs 1W", [h2h.longestAStreak, h2h.longestBStreak], [3, 1]);
+  check("h2h meetings newest first", h2h.meetings[0].id > h2h.meetings[h2h.meetings.length - 1].id, true);
+
+  // Teammates are NOT rivals: Alpha & Bravo teamed once → excluded from h2h.
+  const teamed = [...matches, mk(id++, "multiplayer", "A", [[1, "A"], [2, "A"], [3, "B"], [4, "B"]], "2026-09-11")];
+  check("teammate match excluded from h2h", headToHead(teamed, 1, 2, S).meetings.length, 0);
 }
 
 console.log("\n— Spec §24: zero-division & precision —");

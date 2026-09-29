@@ -4,7 +4,7 @@ import Image from "next/image";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import { MonthlyTrendChart } from "@/components/Charts";
 import { loadLeague } from "@/lib/league";
-import { computePlayerStats, monthKeyOf } from "@/lib/stats";
+import { computePlayerStats, computeStreaks, monthKeyOf } from "@/lib/stats";
 import { getSettings, pointsForType } from "@/lib/settings";
 import { formatDate, formatMonth } from "@/lib/view";
 import { getAllPlayers } from "@/lib/players";
@@ -118,6 +118,7 @@ export default async function PlayerProfilePage({
   });
 
   const displayName = player.nickname || player.name;
+  const streak = computeStreaks(allMatches).get(playerId) ?? null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -163,6 +164,31 @@ export default async function PlayerProfilePage({
               {player.club && ` · ${player.club}`}
               {!player.active && " · inactive"}
             </p>
+            {streak?.current && (
+              <p className="mt-2 text-sm">
+                <span
+                  className={`badge !py-1 ${
+                    streak.current.type === "W"
+                      ? "border-volt-400/50 text-volt-300"
+                      : "border-ember-400/40 text-ember-400"
+                  }`}
+                >
+                  {streak.current.type === "W" ? "🔥" : "❄️"} {streak.current.count}
+                  {streak.current.type === "W" ? "-match win streak" : "-match losing streak"}
+                </span>
+                <span className="ml-2 text-xs text-white/40">
+                  best {streak.bestWinStreak}W · worst {streak.worstLossStreak}L
+                </span>
+              </p>
+            )}
+            {career.matchesPlayed > 0 && (
+              <Link
+                href={`/h2h?a=${player.id}`}
+                className="mt-3 inline-block text-sm font-semibold text-volt-300 transition-colors hover:text-volt-200"
+              >
+                ⚔️ Head-to-head records →
+              </Link>
+            )}
           </div>
         </div>
       </header>

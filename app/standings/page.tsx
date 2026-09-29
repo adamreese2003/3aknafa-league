@@ -1,6 +1,8 @@
 import StandingsTable from "@/components/StandingsTable";
+import PlayerAvatar from "@/components/PlayerAvatar";
 import { WinRateChart, WinsLossesChart } from "@/components/Charts";
 import { loadLeague } from "@/lib/league";
+import { computeStreaks } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,19 @@ export default async function StandingsPage() {
     ...s,
     player: league.playerById.get(s.playerId)!,
   }));
+
+  const streaks = computeStreaks(league.matches);
+  const streakChips = league.players
+    .filter((p) => p.active)
+    .map((p) => ({ player: p, streak: streaks.get(p.id) }))
+    .filter((x) => x.streak?.current)
+    .sort((x, y) => {
+      const a = x.streak!.current!;
+      const b = y.streak!.current!;
+      if (a.type !== b.type) return a.type === "W" ? -1 : 1;
+      return b.count - a.count;
+    })
+    .slice(0, 8);
 
   const chartData = [...rows]
     .sort((a, b) => b.winPct - a.winPct)
@@ -41,6 +56,32 @@ export default async function StandingsPage() {
       </header>
 
       <StandingsTable rows={rows} />
+
+      {streakChips.length > 0 && (
+        <section className="glass mt-6 rounded-2xl p-5 sm:p-6">
+          <h2 className="section-title mb-4">Current streaks</h2>
+          <div className="flex flex-wrap gap-2.5">
+            {streakChips.map(({ player, streak }) => {
+              const cur = streak!.current!;
+              const hot = cur.type === "W";
+              return (
+                <a
+                  key={player.id}
+                  href={`/players/${player.id}`}
+                  className={`badge !py-1.5 ${
+                    hot
+                      ? "border-volt-400/50 bg-volt-400/10 text-volt-300"
+                      : "border-ember-400/40 bg-ember-400/10 text-ember-400"
+                  }`}
+                >
+                  {hot ? "🔥" : "❄️"} {player.nickname || player.name} · {cur.count}
+                  {hot ? "W" : "L"}
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="mt-12 grid gap-6 lg:grid-cols-2">
         <div className="glass rounded-2xl p-5 sm:p-6">

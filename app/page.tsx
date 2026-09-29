@@ -6,7 +6,7 @@ import StatCard from "@/components/StatCard";
 import StandingsTable from "@/components/StandingsTable";
 import { getCurrentUser } from "@/lib/auth";
 import { currentMonthKey, loadLeague } from "@/lib/league";
-import { monthlyAwards } from "@/lib/stats";
+import { computeStreaks, monthlyAwards } from "@/lib/stats";
 import { formatMonth, toMatchView } from "@/lib/view";
 
 export default async function DashboardPage() {
@@ -192,6 +192,55 @@ export default async function DashboardPage() {
           </div>
         </section>
       )}
+
+      {/* Streaks strip */}
+      {(() => {
+        const streaks = computeStreaks(league.matches);
+        const chips = league.players
+          .filter((p) => p.active)
+          .map((p) => ({ player: p, streak: streaks.get(p.id) }))
+          .filter((x) => x.streak?.current)
+          .sort((x, y) => {
+            const a = x.streak!.current!;
+            const b = y.streak!.current!;
+            if (a.type !== b.type) return a.type === "W" ? -1 : 1;
+            return b.count - a.count;
+          })
+          .slice(0, 6);
+        if (chips.length === 0) return null;
+        return (
+          <section className="mb-12">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <h2 className="section-title">
+                Streak watch <span className="text-white/35">· hottest first</span>
+              </h2>
+              <Link href="/standings" className="text-sm font-semibold text-volt-300 hover:text-volt-200">
+                Standings →
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {chips.map(({ player, streak }) => {
+                const cur = streak!.current!;
+                const hot = cur.type === "W";
+                return (
+                  <Link
+                    key={player.id}
+                    href={`/players/${player.id}`}
+                    className={`badge !py-1.5 ${
+                      hot
+                        ? "border-volt-400/50 bg-volt-400/10 text-volt-300"
+                        : "border-ember-400/40 bg-ember-400/10 text-ember-400"
+                    }`}
+                  >
+                    {hot ? "🔥" : "❄️"} {player.nickname || player.name} · {cur.count}
+                    {hot ? "W" : "L"}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Standings + recent matches */}
       <section className="grid gap-8 lg:grid-cols-[1.25fr_1fr]">
