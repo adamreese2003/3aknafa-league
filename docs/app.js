@@ -267,8 +267,8 @@ function computeStandings(players, stats) {
   const rows = players.map((p) => stats.get(p.id) || { id: p.id, mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 });
   rows.sort(
     (a, b) =>
-      b.winPct - a.winPct ||
       b.wins - a.wins ||
+      b.winPct - a.winPct ||
       b.mp - a.mp ||
       b.points - a.points ||
       displayName(players.find((p) => p.id === a.id)).localeCompare(
@@ -278,11 +278,11 @@ function computeStandings(players, stats) {
   let lastRank = 0;
   let lastKey = "";
   return rows.map((r, i) => {
-    const key = `${r.winPct}|${r.wins}|${r.mp}|${r.points}`;
+    const key = `${r.wins}|${r.winPct}|${r.mp}|${r.points}`;
     const rank = key === lastKey ? lastRank : i + 1;
     lastRank = rank;
     lastKey = key;
-    return { ...r, rank, tied: rows.filter((x) => `${x.winPct}|${x.wins}|${x.mp}|${x.points}` === key).length > 1 };
+    return { ...r, rank, tied: rows.filter((x) => `${x.wins}|${x.winPct}|${x.mp}|${x.points}` === key).length > 1 };
   });
 }
 
@@ -561,7 +561,7 @@ function pageDashboard(data) {
     <div class="two-col">
       <div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
-          <h2 class="section-title">Top of the table <span style="color:var(--faint)">· by win rate</span></h2>
+          <h2 class="section-title">Top of the table <span style="color:var(--faint)">· by wins</span></h2>
           <a href="#/standings" style="color:var(--volt-300);font-size:.85rem;font-weight:600">Full table →</a>
         </div>
         ${standingsTableHTML(top5, players)}
@@ -583,7 +583,7 @@ function pageStandings(data, sortKey, sortAsc) {
     <div class="page-head">
       <p class="eyebrow">League table</p>
       <h1>Standings</h1>
-      <p>Ranked by win percentage, then wins, then matches played. Single win 1 pt · Bo3 win 2 pts · multiplayer win 1 pt each · MP Bo3 2 pts each — points still show in the Pts column. Tap a column to sort.</p>
+      <p>Ranked by total wins — consistency across the season is king — with win rate as the tiebreaker. Single win 1 pt · Bo3 win 2 pts · multiplayer win 1 pt each · MP Bo3 2 pts each — points still show in the Pts column. Tap a column to sort.</p>
     </div>
     <div id="tableHost">${standingsTableHTML(standings, data.players, sortKey, sortAsc)}</div>
   </div>`;

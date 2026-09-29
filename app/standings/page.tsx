@@ -32,11 +32,11 @@ export default async function StandingsPage() {
         <p className="label">League table</p>
         <h1 className="heading-display text-3xl text-white sm:text-4xl">Standings</h1>
         <p className="mt-2 max-w-2xl text-sm text-white/55">
-          Ranked by win percentage, then wins, then matches played (single win{" "}
-          {league.settings.pointsSingle} pt · best-of-3 win {league.settings.pointsBestOf3} pts ·
-          multiplayer win {league.settings.pointsMultiplayer} pt · multiplayer Bo3{" "}
-          {league.settings.pointsMultiplayerBo3} pts still earn league points in the Pts column).
-          Tap any column to sort.
+          Ranked by total wins — consistency across the season is king — with win rate as the
+          tiebreaker (single win {league.settings.pointsSingle} pt · best-of-3 win{" "}
+          {league.settings.pointsBestOf3} pts · multiplayer win {league.settings.pointsMultiplayer}{" "}
+          pt · multiplayer Bo3 {league.settings.pointsMultiplayerBo3} pts still earn points in the
+          Pts column). Tap any column to sort.
         </p>
       </header>
 

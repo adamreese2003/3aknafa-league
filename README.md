@@ -52,8 +52,9 @@ All point values are configurable in **Settings** and apply instantly.
 **Win percentage** = wins / matches played × 100 (shown with one decimal,
 kept at full precision for ranking).
 
-**Standings** rank by win percentage → wins → matches played → points.
-Players identical on all four share a rank (`=`).
+**Standings** rank by total wins (consistency first), with win rate as the
+tiebreaker, then matches played, then points. Players identical on all four
+share a rank (`=`). Monthly awards stay win-rate based with the minimum.
 
 **Monthly awards** use win rate — never points — among players who meet the
 minimum monthly matches (default 5, configurable):
