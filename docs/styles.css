@@ -156,6 +156,10 @@ img {
   gap: 2px;
 }
 
+.nav-mobile[hidden] {
+  display: none;
+}
+
 .nav-mobile a {
   font-family: var(--font-display);
   font-weight: 600;
