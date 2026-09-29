@@ -298,11 +298,14 @@ function computeStats(matches) {
 }
 
 function computeStandings(players, stats) {
-  const rows = players.map((p) => stats.get(p.id) || { id: p.id, mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 });
+  const rows = players
+    .map((p) => stats.get(p.id) || { id: p.id, mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 })
+    .map((r) => ({ ...r, score: r.mp > 0 ? (r.wins * r.winPct) / 100 : 0 }));
   rows.sort(
     (a, b) =>
-      b.wins - a.wins ||
+      b.score - a.score ||
       b.winPct - a.winPct ||
+      b.wins - a.wins ||
       b.mp - a.mp ||
       b.points - a.points ||
       displayName(players.find((p) => p.id === a.id)).localeCompare(
@@ -312,11 +315,16 @@ function computeStandings(players, stats) {
   let lastRank = 0;
   let lastKey = "";
   return rows.map((r, i) => {
-    const key = `${r.wins}|${r.winPct}|${r.mp}|${r.points}`;
+    const key = `${r.score}|${r.winPct}|${r.wins}|${r.mp}|${r.points}`;
     const rank = key === lastKey ? lastRank : i + 1;
     lastRank = rank;
     lastKey = key;
-    return { ...r, rank, tied: rows.filter((x) => `${x.wins}|${x.winPct}|${x.mp}|${x.points}` === key).length > 1 };
+    return {
+      ...r,
+      rank,
+      tied: rows.filter((x) => `${x.score}|${x.winPct}|${x.wins}|${x.mp}|${x.points}` === key)
+        .length > 1,
+    };
   });
 }
 
@@ -582,6 +590,7 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
     ["losses", "L"],
     ["points", "Pts"],
     ["winPct", "Win %"],
+    ["score", "Score"],
   ];
   const head = cols
     .map(([key, label]) => {
@@ -612,6 +621,7 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
       <td><span class="winbar">${r.winPct.toFixed(1)}%<span class="track"><span class="fill" style="width:${Math.round(
         r.winPct
       )}%"></span></span></span></td>
+      <td class="pts" style="color:var(--volt-300)">${r.score.toFixed(1)}</td>
     </tr>`;
     })
     .join("");
@@ -724,7 +734,7 @@ function pageDashboard(data) {
     <div class="two-col">
       <div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
-          <h2 class="section-title">Top of the table <span style="color:var(--faint)">· by wins</span></h2>
+              <h2 class="section-title">Top of the table <span style="color:var(--faint)">· by score</span></h2>
           <a href="#/standings" style="color:var(--volt-300);font-size:.85rem;font-weight:600">Full table →</a>
         </div>
         ${standingsTableHTML(top5, players)}
@@ -764,7 +774,7 @@ function pageStandings(data, sortKey, sortAsc) {
     <div class="page-head">
       <p class="eyebrow">League table</p>
       <h1>Standings</h1>
-      <p>Ranked by total wins — consistency across the season is king — with win rate as the tiebreaker. Single win 1 pt · Bo3 win 2 pts · multiplayer win 1 pt each · MP Bo3 2 pts each — points still show in the Pts column. Tap a column to sort.</p>
+      <p>Ranked by <b style="color:var(--volt-300)">Score = wins × win rate</b> — rewarding both consistency and efficiency. A 35W-70% player beats a 9W-90% player, and a 9W-69% player beats a 10W-37% player. Win rate, wins, matches and points act as tiebreakers. Tap a column to sort.</p>
     </div>
     <div id="tableHost">${standingsTableHTML(standings, data.players, sortKey, sortAsc)}</div>
     ${

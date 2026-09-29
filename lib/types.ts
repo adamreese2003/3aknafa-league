@@ -44,6 +44,8 @@ export interface PlayerStats {
 export interface RankedPlayerStats extends PlayerStats {
   rank: number;
   tied: boolean;
+  /** Dominance score: wins × win rate — balances volume and efficiency. */
+  score: number;
 }
 
 export interface LeagueSettings {

@@ -148,9 +148,38 @@ console.log("\n— Spec §10: tie-breakers —");
   check("order: Foxtrot 100% first, then equal-75% pair", order, [6, 1, 2, 3]);
   check("equal win% → more wins first (Alpha before Bravo)", order.indexOf(1) < order.indexOf(2), true);
   const standings = rankForStandings(stats, P);
-  check("standings leader by total wins = Alpha (6W beats 100% on 3W)", standings[0].playerId, 1);
-  check("3W tie broken by win rate: Foxtrot (100%) above Bravo (75%)",
+  check("standings leader by score = Alpha (6W×75% = 4.5)", standings[0].playerId, 1);
+  check("Foxtrot (3W×100% = 3.0) above Bravo (3W×75% = 2.25)",
     [standings[1].playerId, standings[2].playerId], [6, 2]);
+  check("score values", [Math.round(standings[0].score * 100) / 100, Math.round(standings[1].score * 100) / 100], [4.5, 3]);
+
+console.log("\n— Score balances volume AND efficiency (the user's two cases) —");
+{
+  // Case 1: 35/50-style volume player must beat a 9/10-style small-sample player.
+  const m1: MatchRecord[] = [];
+  let id = 1;
+  for (let i = 0; i < 35; i++) m1.push(mk(id++, "single", "A", [[1, "A"], [2, "B"]]));
+  for (let i = 0; i < 15; i++) m1.push(mk(id++, "single", "B", [[1, "A"], [2, "B"]]));
+  for (let i = 0; i < 9; i++) m1.push(mk(id++, "single", "A", [[3, "A"], [2, "B"]]));
+  const s1 = rankForStandings(computePlayerStats(m1, S), P);
+  const p1 = s1.find((r) => r.playerId === 1)!; // 35W/70% → score 24.5
+  const p3 = s1.find((r) => r.playerId === 3)!; // 9W/90% → score 8.1
+  check("35W-70% (24.5) outranks 9W-90% (8.1)", p1.rank < p3.rank, true);
+
+  // Case 2: Shb Zayed-style 9W-69% must beat El Natra-style 10W-37%.
+  const m2: MatchRecord[] = [];
+  id = 1;
+  for (let i = 0; i < 9; i++) m2.push(mk(id++, "single", "A", [[4, "A"], [2, "B"]])); // 9W
+  for (let i = 0; i < 4; i++) m2.push(mk(id++, "single", "B", [[4, "A"], [2, "B"]])); // 4L → 13mp 69.2%
+  for (let i = 0; i < 10; i++) m2.push(mk(id++, "single", "A", [[6, "A"], [2, "B"]])); // 10W
+  for (let i = 0; i < 17; i++) m2.push(mk(id++, "single", "B", [[6, "A"], [2, "B"]])); // 17L → 27mp 37%
+  const s2 = rankForStandings(computePlayerStats(m2, S), P);
+  const p4 = s2.find((r) => r.playerId === 4)!; // 9W-69.2% → score 6.23
+  const p6 = s2.find((r) => r.playerId === 6)!; // 10W-37% → score 3.7
+  check("9W-69% (6.2) outranks 10W-37% (3.7)", p4.rank < p6.rank, true);
+  check("scores precise", [Math.round(p4.score * 100) / 100, Math.round(p6.score * 100) / 100], [6.23, 3.7]);
+  check("ranks gap reflects the gap", p6.rank - p4.rank >= 1, true);
+}
 }
 
 console.log("\n— Spec §10-4: identical records are a TIE —");

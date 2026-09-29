@@ -13,18 +13,19 @@ export interface StandingRow {
   losses: number;
   points: number;
   winPct: number;
+  score: number;
   player: { id: number; name: string; nickname: string | null; photoUrl: string | null; active: boolean };
 }
 
-type SortKey = "rank" | "matchesPlayed" | "wins" | "losses" | "points" | "winPct";
+type SortKey = "rank" | "matchesPlayed" | "wins" | "losses" | "points" | "winPct" | "score";
 
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
-  { key: "rank", label: "#" },
   { key: "matchesPlayed", label: "MP" },
   { key: "wins", label: "W" },
   { key: "losses", label: "L" },
   { key: "points", label: "Pts" },
   { key: "winPct", label: "Win %" },
+  { key: "score", label: "Score" },
 ];
 
 export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
@@ -161,6 +162,9 @@ export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
                     </span>
                   </div>
                 </td>
+                <td className="px-3 py-3 pr-5 text-right font-display text-base font-bold tabular-nums text-volt-300">
+                  {row.score.toFixed(1)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -203,8 +207,10 @@ export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="font-display text-lg font-bold text-volt-300">{row.points}</p>
-              <p className="text-[0.65rem] text-white/40">{row.winPct.toFixed(1)}%</p>
+              <p className="font-display text-lg font-bold text-volt-300">{row.score.toFixed(1)}</p>
+              <p className="text-[0.65rem] text-white/40">
+                {row.winPct.toFixed(0)}% · {row.wins}W
+              </p>
             </div>
           </Link>
         ))}

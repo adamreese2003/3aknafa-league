@@ -94,9 +94,11 @@ export function orderByPerformance(
 }
 
 /**
- * League standings (spec §13/§26): ranked by TOTAL WINS (rewards consistency
- * across the season), then win rate as tiebreaker, then matches played,
- * points. Players identical on every metric share a rank (tie).
+ * League standings (spec §13/§26): ranked by DOMINANCE SCORE = wins × win rate.
+ * Rewards both volume and efficiency: a 35/50 player (score 24.5) beats a
+ * 9/10 player (score 8.1), while a 9W-69% player beats a 10W-37% player
+ * (6.2 vs 3.7). Tiebreakers: win rate, wins, matches played, points.
+ * Players identical on every metric share a rank (tie).
  */
 export function rankForStandings(
   stats: Map<number, PlayerStats>,
@@ -104,12 +106,17 @@ export function rankForStandings(
 ): RankedPlayerStats[] {
   const byId = new Map(players.map((p) => [p.id, p]));
   const sorted = [...stats.values()]
-    .map((s) => ({ ...s, player: byId.get(s.playerId) }))
+    .map((s) => ({
+      ...s,
+      score: s.matchesPlayed > 0 ? (s.wins * s.winPct) / 100 : 0,
+      player: byId.get(s.playerId),
+    }))
     .filter((s) => s.player !== undefined)
     .sort(
       (a, b) =>
-        b.wins - a.wins ||
+        b.score - a.score ||
         b.winPct - a.winPct ||
+        b.wins - a.wins ||
         b.matchesPlayed - a.matchesPlayed ||
         b.points - a.points ||
         a.player!.name.localeCompare(b.player!.name)
@@ -119,7 +126,7 @@ export function rankForStandings(
   let lastRank = 0;
   let lastKey = "";
   sorted.forEach((s, idx) => {
-    const key = `${s.wins}|${s.winPct}|${s.matchesPlayed}|${s.points}`;
+    const key = `${s.score}|${s.winPct}|${s.wins}|${s.matchesPlayed}|${s.points}`;
     const tied = key === lastKey;
     const rank = tied ? lastRank : idx + 1;
     lastRank = rank;
