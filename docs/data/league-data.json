@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-09-29T20:38:43.836Z",
+  "exportedAt": "2026-10-02T03:37:53.183Z",
   "source": "3AKNAFA LEAGUE admin app",
   "settings": {
     "leagueName": "3AKNAFA LEAGUE",
@@ -974,6 +974,211 @@
         4
       ],
       "location": "san siro",
+      "notes": null
+    },
+    {
+      "id": 69,
+      "type": "single",
+      "date": "2026-10-01",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4
+      ],
+      "B": [
+        10
+      ],
+      "location": "ghost",
+      "notes": null
+    },
+    {
+      "id": 70,
+      "type": "single",
+      "date": "2026-10-01",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4
+      ],
+      "B": [
+        10
+      ],
+      "location": "ghost",
+      "notes": null
+    },
+    {
+      "id": 71,
+      "type": "single",
+      "date": "2026-10-01",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4
+      ],
+      "B": [
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 72,
+      "type": "single",
+      "date": "2026-10-01",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 73,
+      "type": "single",
+      "date": "2026-10-01",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        4
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 74,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        10
+      ],
+      "B": [
+        1,
+        6
+      ],
+      "location": "elsegn",
+      "notes": null
+    },
+    {
+      "id": 75,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        4,
+        10
+      ],
+      "location": "elsegn",
+      "notes": "m3 momo"
+    },
+    {
+      "id": 76,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        1,
+        2
+      ],
+      "location": "elsegn",
+      "notes": null
+    },
+    {
+      "id": 77,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        5
+      ],
+      "B": [
+        6
+      ],
+      "location": "elsegn",
+      "notes": null
+    },
+    {
+      "id": 78,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        4,
+        5
+      ],
+      "B": [
+        2,
+        10
+      ],
+      "location": "elsegn",
+      "notes": null
+    },
+    {
+      "id": 79,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        1
+      ],
+      "B": [
+        4,
+        5
+      ],
+      "location": "elsegn",
+      "notes": "m3 momo"
+    },
+    {
+      "id": 80,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        1
+      ],
+      "B": [
+        2,
+        6
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 81,
+      "type": "multiplayer",
+      "date": "2026-10-02",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5,
+        10
+      ],
+      "B": [
+        1
+      ],
+      "location": null,
       "notes": null
     }
   ]
