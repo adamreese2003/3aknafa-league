@@ -6,6 +6,7 @@ import {
   computePlayerStats,
   computeStreaks,
   headToHead,
+  inactivityPenalty,
   monthlyAwards,
   orderByPerformance,
   rankForStandings,
@@ -147,38 +148,54 @@ console.log("\n— Spec §10: tie-breakers —");
   const order = orderByPerformance(stats, playersById).map((s) => s.playerId);
   check("order: Foxtrot 100% first, then equal-75% pair", order, [6, 1, 2, 3]);
   check("equal win% → more wins first (Alpha before Bravo)", order.indexOf(1) < order.indexOf(2), true);
-  const standings = rankForStandings(stats, P);
-  check("standings leader by score = Alpha (6W×75% = 4.5)", standings[0].playerId, 1);
-  check("Foxtrot (3W×100% = 3.0) above Bravo (3W×75% = 2.25)",
-    [standings[1].playerId, standings[2].playerId], [6, 2]);
-  check("score values", [Math.round(standings[0].score * 100) / 100, Math.round(standings[1].score * 100) / 100], [4.5, 3]);
+  const standings = rankForStandings(stats, P, matches);
+  check("standings leader by effective win% = Foxtrot (100%)", standings[0].playerId, 6);
+  check("75% tie → Alpha (6W) above Bravo (3W)",
+    [standings[1].playerId, standings[2].playerId], [1, 2]);
+  check("everyone decayed equally on ancient dates (−30)",
+    standings.slice(0, 3).every((r) => r.decayPenalty === 30), true);
 
-console.log("\n— Score balances volume AND efficiency (the user's two cases) —");
+console.log("\n— Inactivity decay: −10 win% per full idle week —");
 {
-  // Case 1: 35/50-style volume player must beat a 9/10-style small-sample player.
-  const m1: MatchRecord[] = [];
-  let id = 1;
-  for (let i = 0; i < 35; i++) m1.push(mk(id++, "single", "A", [[1, "A"], [2, "B"]]));
-  for (let i = 0; i < 15; i++) m1.push(mk(id++, "single", "B", [[1, "A"], [2, "B"]]));
-  for (let i = 0; i < 9; i++) m1.push(mk(id++, "single", "A", [[3, "A"], [2, "B"]]));
-  const s1 = rankForStandings(computePlayerStats(m1, S), P);
-  const p1 = s1.find((r) => r.playerId === 1)!; // 35W/70% → score 24.5
-  const p3 = s1.find((r) => r.playerId === 3)!; // 9W/90% → score 8.1
-  check("35W-70% (24.5) outranks 9W-90% (8.1)", p1.rank < p3.rank, true);
+  const daysAgo = (n: number): string => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    const pad = (x: number) => String(x).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  check("6 days idle → no penalty", inactivityPenalty(daysAgo(6)).penalty, 0);
+  check("7 days idle → −10", inactivityPenalty(daysAgo(7)).penalty, 10);
+  check("13 days idle → −10", inactivityPenalty(daysAgo(13)).penalty, 10);
+  check("14 days idle → −20", inactivityPenalty(daysAgo(14)).penalty, 20);
 
-  // Case 2: Shb Zayed-style 9W-69% must beat El Natra-style 10W-37%.
+  // The Shb Zayed case: idle 9W-69.2% (last match 8 days ago) still sits above
+  // an active 10W-37% player — and his raw rate stays 69.2% on his profile.
   const m2: MatchRecord[] = [];
+  let id = 1;
+  for (let i = 0; i < 9; i++) m2.push(mk(id++, "single", "A", [[4, "A"], [2, "B"]], daysAgo(9)));
+  for (let i = 0; i < 4; i++) m2.push(mk(id++, "single", "B", [[4, "A"], [2, "B"]], daysAgo(9)));
+  for (let i = 0; i < 10; i++) m2.push(mk(id++, "single", "A", [[6, "A"], [2, "B"]], daysAgo(1)));
+  for (let i = 0; i < 17; i++) m2.push(mk(id++, "single", "B", [[6, "A"], [2, "B"]], daysAgo(1)));
+  const s2 = rankForStandings(computePlayerStats(m2, S), P, m2);
+  const p4 = s2.find((r) => r.playerId === 4)!;
+  const p6 = s2.find((r) => r.playerId === 6)!;
+  check("decay applied: 69.2% − 10 = 59.2%", Math.round(p4.effWinPct * 10) / 10, 59.2);
+  check("raw win% preserved on the record", Math.round(p4.winPct * 10) / 10, 69.2);
+  check("active player unpenalized", p6.decayPenalty, 0);
+  check("idle 9W-59.2% still above active 10W-37%", p4.rank < p6.rank, true);
+
+  // And decay can demote: idle 90% (15 days → −20 → 70%) falls below active 75%.
+  const m3: MatchRecord[] = [];
   id = 1;
-  for (let i = 0; i < 9; i++) m2.push(mk(id++, "single", "A", [[4, "A"], [2, "B"]])); // 9W
-  for (let i = 0; i < 4; i++) m2.push(mk(id++, "single", "B", [[4, "A"], [2, "B"]])); // 4L → 13mp 69.2%
-  for (let i = 0; i < 10; i++) m2.push(mk(id++, "single", "A", [[6, "A"], [2, "B"]])); // 10W
-  for (let i = 0; i < 17; i++) m2.push(mk(id++, "single", "B", [[6, "A"], [2, "B"]])); // 17L → 27mp 37%
-  const s2 = rankForStandings(computePlayerStats(m2, S), P);
-  const p4 = s2.find((r) => r.playerId === 4)!; // 9W-69.2% → score 6.23
-  const p6 = s2.find((r) => r.playerId === 6)!; // 10W-37% → score 3.7
-  check("9W-69% (6.2) outranks 10W-37% (3.7)", p4.rank < p6.rank, true);
-  check("scores precise", [Math.round(p4.score * 100) / 100, Math.round(p6.score * 100) / 100], [6.23, 3.7]);
-  check("ranks gap reflects the gap", p6.rank - p4.rank >= 1, true);
+  for (let i = 0; i < 18; i++) m3.push(mk(id++, "single", "A", [[1, "A"], [2, "B"]], daysAgo(15)));
+  for (let i = 0; i < 2; i++) m3.push(mk(id++, "single", "B", [[1, "A"], [2, "B"]], daysAgo(15)));
+  for (let i = 0; i < 3; i++) m3.push(mk(id++, "single", "A", [[3, "A"], [2, "B"]], daysAgo(1)));
+  m3.push(mk(id++, "single", "B", [[3, "A"], [2, "B"]], daysAgo(1)));
+  const s3 = rankForStandings(computePlayerStats(m3, S), P, m3);
+  const p1 = s3.find((r) => r.playerId === 1)!;
+  const p3 = s3.find((r) => r.playerId === 3)!;
+  check("idle 90%−20 = 70% drops below active 75%", p3.rank < p1.rank, true);
+  check("penalty capped at 0% floor", Math.max(0, 0), 0);
 }
 }
 

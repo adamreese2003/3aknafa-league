@@ -44,8 +44,11 @@ export interface PlayerStats {
 export interface RankedPlayerStats extends PlayerStats {
   rank: number;
   tied: boolean;
-  /** Dominance score: wins × win rate — balances volume and efficiency. */
-  score: number;
+  /** Win % after inactivity decay — this is what standings rank by. */
+  effWinPct: number;
+  /** Total percentage points lost to inactivity (10 per full idle week). */
+  decayPenalty: number;
+  weeksInactive: number;
 }
 
 export interface LeagueSettings {

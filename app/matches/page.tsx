@@ -10,9 +10,7 @@ export default async function MatchesPage() {
   const user = await getCurrentUser();
   const isAdmin = user?.role === "admin";
 
-  const matches = league.matches
-    .map((m) => toMatchView(m, league.playerById, league.settings))
-    .reverse(); // oldest first for chronological reading; browser re-filters
+  const matches = league.matches.map((m) => toMatchView(m, league.playerById, league.settings)); // newest first
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">

@@ -297,14 +297,23 @@ function computeStats(matches) {
   return stats;
 }
 
-function computeStandings(players, stats) {
+function computeStandings(players, stats, matches) {
+  const last = lastPlayedMap(matches || []);
   const rows = players
     .map((p) => stats.get(p.id) || { id: p.id, mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 })
-    .map((r) => ({ ...r, score: r.mp > 0 ? (r.wins * r.winPct) / 100 : 0 }));
+    .map((r) => {
+      const lp = last[r.id];
+      const { weeks, penalty } = lp ? inactivityPenalty(lp) : { weeks: 0, penalty: 0 };
+      return {
+        ...r,
+        effWinPct: Math.max(0, r.winPct - penalty),
+        decayPenalty: penalty,
+        weeksInactive: weeks,
+      };
+    });
   rows.sort(
     (a, b) =>
-      b.score - a.score ||
-      b.winPct - a.winPct ||
+      b.effWinPct - a.effWinPct ||
       b.wins - a.wins ||
       b.mp - a.mp ||
       b.points - a.points ||
@@ -315,15 +324,14 @@ function computeStandings(players, stats) {
   let lastRank = 0;
   let lastKey = "";
   return rows.map((r, i) => {
-    const key = `${r.score}|${r.winPct}|${r.wins}|${r.mp}|${r.points}`;
+    const key = `${r.effWinPct}|${r.wins}|${r.mp}|${r.points}`;
     const rank = key === lastKey ? lastRank : i + 1;
     lastRank = rank;
     lastKey = key;
     return {
       ...r,
       rank,
-      tied: rows.filter((x) => `${x.score}|${x.winPct}|${x.wins}|${x.mp}|${x.points}` === key)
-        .length > 1,
+      tied: rows.filter((x) => `${x.effWinPct}|${x.wins}|${x.mp}|${x.points}` === key).length > 1,
     };
   });
 }
@@ -415,6 +423,27 @@ function formatBreakdown(matches, playerId) {
 }
 
 /* ---------------- streaks & head-to-head ---------------- */
+
+function lastPlayedMap(matches) {
+  const map = {};
+  for (const m of matches) {
+    for (const side of ["A", "B"]) {
+      for (const id of m[side]) {
+        if (!map[id] || m.date > map[id]) map[id] = m.date;
+      }
+    }
+  }
+  return map;
+}
+
+function inactivityPenalty(lastPlayed, now = new Date()) {
+  const [y, m, d] = lastPlayed.split("-").map(Number);
+  const last = new Date(y, m - 1, d);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.floor((today.getTime() - last.getTime()) / 86400000);
+  const weeks = Math.max(0, Math.floor(days / 7));
+  return { weeks, penalty: weeks * 10 };
+}
 
 function computeStreaks(matches) {
   const chrono = [...matches].sort((a, b) =>
@@ -589,8 +618,7 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
     ["wins", "W"],
     ["losses", "L"],
     ["points", "Pts"],
-    ["winPct", "Win %"],
-    ["score", "Score"],
+    ["effWinPct", "Win %"],
   ];
   const head = cols
     .map(([key, label]) => {
@@ -618,10 +646,11 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
       <td class="wins">${r.wins}</td>
       <td class="losses">${r.losses}</td>
       <td class="pts">${r.points}</td>
-      <td><span class="winbar">${r.winPct.toFixed(1)}%<span class="track"><span class="fill" style="width:${Math.round(
-        r.winPct
-      )}%"></span></span></span></td>
-      <td class="pts" style="color:var(--volt-300)">${r.score.toFixed(1)}</td>
+      <td><span class="winbar"><span style="${r.decayPenalty > 0 ? "color:var(--ember-400)" : ""}">${r.effWinPct.toFixed(
+        1
+      )}%</span><span class="track"><span class="fill" style="width:${Math.round(
+        r.effWinPct
+      )}%"></span></span></span>${r.decayPenalty > 0 ? ` <span class="badge ember" title="Raw ${r.winPct.toFixed(1)}% — loses 10 per full idle week">−${r.decayPenalty}</span>` : ""}</td>
     </tr>`;
     })
     .join("");
@@ -635,7 +664,7 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
 function pageDashboard(data) {
   const { players, matches } = data;
   const stats = computeStats(matches);
-  const standings = computeStandings(players, stats);
+  const standings = computeStandings(players, stats, matches);
   const month = new Date().toISOString().slice(0, 7);
   const awards = monthlyAwards(matches, month);
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -734,7 +763,7 @@ function pageDashboard(data) {
     <div class="two-col">
       <div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
-              <h2 class="section-title">Top of the table <span style="color:var(--faint)">· by score</span></h2>
+              <h2 class="section-title">Top of the table <span style="color:var(--faint)">· by win rate</span></h2>
           <a href="#/standings" style="color:var(--volt-300);font-size:.85rem;font-weight:600">Full table →</a>
         </div>
         ${standingsTableHTML(top5, players)}
@@ -751,7 +780,7 @@ function pageDashboard(data) {
 }
 
 function pageStandings(data, sortKey, sortAsc) {
-  const standings = computeStandings(data.players, computeStats(data.matches));
+  const standings = computeStandings(data.players, computeStats(data.matches), data.matches);
   const streaks = computeStreaks(data.matches);
   const chipHTML = data.players
     .map((p) => ({ p, s: streaks.get(p.id) }))
@@ -774,7 +803,7 @@ function pageStandings(data, sortKey, sortAsc) {
     <div class="page-head">
       <p class="eyebrow">League table</p>
       <h1>Standings</h1>
-      <p>Ranked by <b style="color:var(--volt-300)">Score = wins × win rate</b> — rewarding both consistency and efficiency. A 35W-70% player beats a 9W-90% player, and a 9W-69% player beats a 10W-37% player. Win rate, wins, matches and points act as tiebreakers. Tap a column to sort.</p>
+      <p>Ranked by <b style="color:var(--volt-300)">effective win rate</b>. The inactivity rule: miss a full week and you lose 10 win% — another week, another 10 (your raw rate is kept; the penalty hits the ranking only). Win rate is the performance metric used for monthly awards too. Tap a column to sort.</p>
     </div>
     <div id="tableHost">${standingsTableHTML(standings, data.players, sortKey, sortAsc)}</div>
     ${
@@ -790,7 +819,7 @@ function pageStandings(data, sortKey, sortAsc) {
 
 function pagePlayers(data) {
   const stats = computeStats(data.matches);
-  const standings = computeStandings(data.players, stats);
+  const standings = computeStandings(data.players, stats, data.matches);
   const rankById = new Map(standings.map((r) => [r.id, r]));
   const cards = data.players
     .map((p) => {
@@ -831,7 +860,7 @@ function pageProfile(data, playerId) {
   const all = data.matches;
   const mine = all.filter((m) => m.A.includes(p.id) || m.B.includes(p.id));
   const stats = computeStats(mine).get(p.id) || { mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 };
-  const standings = computeStandings(data.players, computeStats(all));
+  const standings = computeStandings(data.players, computeStats(all), all);
   const rank = standings.find((r) => r.id === p.id);
   const bd = formatBreakdown(all, p.id);
   const byId = new Map(data.players.map((x) => [x.id, x]));
@@ -1268,6 +1297,17 @@ async function render() {
       render();
     });
     applyMatchFilters(LEAGUE);
+  }
+  if (route === "#/h2h") {
+    const a = document.getElementById("h2hA");
+    const b = document.getElementById("h2hB");
+    const go = () => {
+      if (a && b && a.value && b.value && a.value !== b.value) {
+        location.hash = `#/h2h?a=${a.value}&b=${b.value}`;
+      }
+    };
+    if (a) a.addEventListener("change", go);
+    if (b) b.addEventListener("change", go);
   }
 }
 

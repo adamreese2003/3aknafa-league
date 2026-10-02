@@ -13,19 +13,20 @@ export interface StandingRow {
   losses: number;
   points: number;
   winPct: number;
-  score: number;
+  effWinPct: number;
+  decayPenalty: number;
+  weeksInactive: number;
   player: { id: number; name: string; nickname: string | null; photoUrl: string | null; active: boolean };
 }
 
-type SortKey = "rank" | "matchesPlayed" | "wins" | "losses" | "points" | "winPct" | "score";
+type SortKey = "rank" | "matchesPlayed" | "wins" | "losses" | "points" | "winPct" | "effWinPct";
 
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: "matchesPlayed", label: "MP" },
   { key: "wins", label: "W" },
   { key: "losses", label: "L" },
   { key: "points", label: "Pts" },
-  { key: "winPct", label: "Win %" },
-  { key: "score", label: "Score" },
+  { key: "effWinPct", label: "Win %" },
 ];
 
 export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
@@ -153,17 +154,33 @@ export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
                 </td>
                 <td className="px-3 py-3 pr-5 text-right">
                   <div className="flex items-center justify-end gap-2.5">
-                    <span className="tabular-nums text-white/80">{row.winPct.toFixed(1)}%</span>
+                    <span
+                      className={`tabular-nums ${
+                        row.decayPenalty > 0 ? "text-ember-400" : "text-white/80"
+                      }`}
+                      title={
+                        row.decayPenalty > 0
+                          ? `Raw ${row.winPct.toFixed(1)}% − ${row.decayPenalty} (inactive ${row.weeksInactive} week${row.weeksInactive === 1 ? "" : "s"})`
+                          : undefined
+                      }
+                    >
+                      {row.effWinPct.toFixed(1)}%
+                    </span>
+                    {row.decayPenalty > 0 && (
+                      <span
+                        className="rounded-full border border-ember-400/40 px-1.5 text-[0.6rem] text-ember-400"
+                        title={`Raw ${row.winPct.toFixed(1)}% — loses 10 per full idle week`}
+                      >
+                        −{row.decayPenalty}
+                      </span>
+                    )}
                     <span className="h-1.5 w-14 overflow-hidden rounded-full bg-white/10">
                       <span
                         className="block h-full rounded-full bg-gradient-to-r from-volt-500 to-volt-300"
-                        style={{ width: `${Math.round(row.winPct)}%` }}
+                        style={{ width: `${Math.round(row.effWinPct)}%` }}
                       />
                     </span>
                   </div>
-                </td>
-                <td className="px-3 py-3 pr-5 text-right font-display text-base font-bold tabular-nums text-volt-300">
-                  {row.score.toFixed(1)}
                 </td>
               </tr>
             ))}
@@ -207,9 +224,15 @@ export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="font-display text-lg font-bold text-volt-300">{row.score.toFixed(1)}</p>
+              <p
+                className={`font-display text-lg font-bold ${
+                  row.decayPenalty > 0 ? "text-ember-400" : "text-volt-300"
+                }`}
+              >
+                {row.effWinPct.toFixed(1)}%
+              </p>
               <p className="text-[0.65rem] text-white/40">
-                {row.winPct.toFixed(0)}% · {row.wins}W
+                {row.wins}W{row.decayPenalty > 0 ? ` · −${row.decayPenalty}` : ""}
               </p>
             </div>
           </Link>

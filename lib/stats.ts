@@ -94,28 +94,57 @@ export function orderByPerformance(
 }
 
 /**
- * League standings (spec §13/§26): ranked by DOMINANCE SCORE = wins × win rate.
- * Rewards both volume and efficiency: a 35/50 player (score 24.5) beats a
- * 9/10 player (score 8.1), while a 9W-69% player beats a 10W-37% player
- * (6.2 vs 3.7). Tiebreakers: win rate, wins, matches played, points.
- * Players identical on every metric share a rank (tie).
+ * League standings (spec §13/§26): ranked by EFFECTIVE WIN PERCENTAGE.
+ * Inactivity rule: every full week (7 days) since a player's last match costs
+ * 10 win-percentage points (Shb Zayed rule). The floor is 0%. Ties broken by
+ * wins → matches played → points → name. Identical records share a rank.
  */
+export function lastPlayedMap(matches: MatchRecord[]): Map<number, string> {
+  const map = new Map<number, string>();
+  for (const m of matches) {
+    for (const p of m.participants) {
+      const cur = map.get(p.playerId);
+      if (!cur || m.playedAt > cur) map.set(p.playerId, m.playedAt);
+    }
+  }
+  return map;
+}
+
+export function inactivityPenalty(
+  lastPlayed: string,
+  now = new Date()
+): { weeks: number; penalty: number } {
+  const [y, m, d] = lastPlayed.split("-").map(Number);
+  const last = new Date(y, m - 1, d);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.floor((today.getTime() - last.getTime()) / 86400000);
+  const weeks = Math.max(0, Math.floor(days / 7));
+  return { weeks, penalty: weeks * 10 };
+}
+
 export function rankForStandings(
   stats: Map<number, PlayerStats>,
-  players: Player[]
+  players: Player[],
+  matches: MatchRecord[] = []
 ): RankedPlayerStats[] {
   const byId = new Map(players.map((p) => [p.id, p]));
+  const last = lastPlayedMap(matches);
   const sorted = [...stats.values()]
-    .map((s) => ({
-      ...s,
-      score: s.matchesPlayed > 0 ? (s.wins * s.winPct) / 100 : 0,
-      player: byId.get(s.playerId),
-    }))
+    .map((s) => {
+      const lp = last.get(s.playerId);
+      const { weeks, penalty } = lp ? inactivityPenalty(lp) : { weeks: 0, penalty: 0 };
+      return {
+        ...s,
+        effWinPct: Math.max(0, s.winPct - penalty),
+        decayPenalty: penalty,
+        weeksInactive: weeks,
+        player: byId.get(s.playerId),
+      };
+    })
     .filter((s) => s.player !== undefined)
     .sort(
       (a, b) =>
-        b.score - a.score ||
-        b.winPct - a.winPct ||
+        b.effWinPct - a.effWinPct ||
         b.wins - a.wins ||
         b.matchesPlayed - a.matchesPlayed ||
         b.points - a.points ||
@@ -126,7 +155,7 @@ export function rankForStandings(
   let lastRank = 0;
   let lastKey = "";
   sorted.forEach((s, idx) => {
-    const key = `${s.score}|${s.winPct}|${s.wins}|${s.matchesPlayed}|${s.points}`;
+    const key = `${s.effWinPct}|${s.wins}|${s.matchesPlayed}|${s.points}`;
     const tied = key === lastKey;
     const rank = tied ? lastRank : idx + 1;
     lastRank = rank;
