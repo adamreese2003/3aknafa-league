@@ -3,7 +3,7 @@ import PlayerAvatar from "@/components/PlayerAvatar";
 import PlayersAdmin from "@/components/PlayersAdmin";
 import { getCurrentUser } from "@/lib/auth";
 import { loadLeague } from "@/lib/league";
-import { formatWinPct } from "@/lib/stats";
+import { effectiveWinPctFor, formatWinPct } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,12 @@ export default async function PlayersPage() {
   const rankById = new Map(league.standings.map((s) => [s.playerId, s.rank]));
   const cards = league.players.map((p) => {
     const s = league.careerStats.get(p.id);
+    const eff = effectiveWinPctFor(
+      p.id,
+      s?.winPct ?? 0,
+      league.matches,
+      league.settings.decayOverrides
+    );
     return {
       player: p,
       rank: rankById.get(p.id) ?? null,
@@ -23,6 +29,8 @@ export default async function PlayersPage() {
       losses: s?.losses ?? 0,
       points: s?.points ?? 0,
       winPct: s?.winPct ?? 0,
+      effWinPct: eff,
+      penalized: eff < (s?.winPct ?? 0),
     };
   });
 
@@ -82,7 +90,12 @@ export default async function PlayersPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs text-white/40">Win rate {formatWinPct(c.winPct)}</p>
+            <p
+              className={`mt-3 text-xs ${c.penalized ? "text-ember-400" : "text-white/40"}`}
+            >
+              Win rate {formatWinPct(c.effWinPct)}
+              {c.penalized && ` (raw ${formatWinPct(c.winPct)})`}
+            </p>
           </Link>
         ))}
       </div>

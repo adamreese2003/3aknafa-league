@@ -28,6 +28,7 @@ const payload = {
     pointsMultiplayerBo3: settings.pointsMultiplayerBo3,
     minMonthlyMatches: settings.minMonthlyMatches,
     monthlyAwardsEnabled: settings.monthlyAwardsEnabled,
+    decayOverrides: settings.decayOverrides,
   },
   players: players.map((p) => ({
     id: p.id,

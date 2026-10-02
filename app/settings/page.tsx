@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import SettingsForm from "@/components/SettingsForm";
 import { getCurrentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { getAllPlayers } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,12 @@ export default async function SettingsPage() {
       <SettingsForm
         initialSettings={settings}
         username={user.username}
+        players={getAllPlayers().map((p) => ({
+          id: p.id,
+          name: p.name,
+          nickname: p.nickname,
+          active: p.active,
+        }))}
       />
     </div>
   );

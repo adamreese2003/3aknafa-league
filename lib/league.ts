@@ -30,7 +30,12 @@ export function loadLeague(): LeagueSnapshot {
   const playerById = new Map(players.map((p) => [p.id, p]));
   const matches = getAllMatches();
   const settings = getSettings();
-  const standings = rankForStandings(computePlayerStats(matches, settings), players, matches);
+  const standings = rankForStandings(
+    computePlayerStats(matches, settings),
+    players,
+    matches,
+    settings.decayOverrides
+  );
   const careerStats = computePlayerStats(matches, settings);
   const totals = leagueTotals(
     matches,

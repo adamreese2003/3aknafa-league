@@ -11,6 +11,7 @@ const patchSchema = z.object({
   pointsMultiplayerBo3: z.number().int().min(0).max(100).optional(),
   minMonthlyMatches: z.number().int().min(1).max(100).optional(),
   monthlyAwardsEnabled: z.boolean().optional(),
+  decayOverrides: z.record(z.string(), z.number().min(-100).max(100)).optional(),
 });
 
 export async function GET() {

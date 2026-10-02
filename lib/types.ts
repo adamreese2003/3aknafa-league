@@ -37,6 +37,10 @@ export interface PlayerStats {
   wins: number;
   losses: number;
   points: number;
+  /** Points earned in solo formats (Single Match + Best of 3). */
+  pointsSolo: number;
+  /** Points earned in team formats (Multiplayer + Multiplayer Bo3). */
+  pointsMulti: number;
   /** 0–100, full precision internally */
   winPct: number;
 }
@@ -59,6 +63,8 @@ export interface LeagueSettings {
   pointsMultiplayerBo3: number;
   minMonthlyMatches: number;
   monthlyAwardsEnabled: boolean;
+  /** Manual ranking penalties (playerId → win% points), e.g. {"7": 10}. */
+  decayOverrides: Record<string, number>;
 }
 
 export interface MonthlyAward {

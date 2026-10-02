@@ -12,6 +12,8 @@ export interface StandingRow {
   wins: number;
   losses: number;
   points: number;
+  pointsSolo: number;
+  pointsMulti: number;
   winPct: number;
   effWinPct: number;
   decayPenalty: number;
@@ -137,6 +139,9 @@ export default function StandingsTable({ rows }: { rows: StandingRow[] }) {
                     <span className="min-w-0">
                       <span className="block truncate font-display font-semibold text-white group-hover:text-volt-300">
                         {row.player.nickname || row.player.name}
+                      </span>
+                      <span className="block truncate text-[0.65rem] leading-tight text-white/35">
+                        single pts: {row.pointsSolo} · multi pts: {row.pointsMulti}
                       </span>
                       {!row.player.active && (
                         <span className="text-[0.65rem] uppercase tracking-wider text-white/30">

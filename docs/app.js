@@ -158,6 +158,7 @@ async function loadLeague() {
           matches,
           rejected: [],
           from: "snapshot",
+          decayOverrides: (j.settings && j.settings.decayOverrides) || {},
           fetchedAt: new Date(j.exportedAt || Date.now()),
         };
       }
@@ -259,7 +260,7 @@ async function loadLeague() {
     }
   }
   matches.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
-  return { players, matches, rejected, from: "sheet", fetchedAt: new Date() };
+  return { players, matches, rejected, from: "sheet", decayOverrides: {}, fetchedAt: new Date() };
 }
 
 /* ---------------- statistics engine ---------------- */
@@ -271,17 +272,21 @@ function displayName(p) {
 function computeStats(matches) {
   const stats = new Map();
   const get = (id) => {
-    if (!stats.has(id)) stats.set(id, { id, mp: 0, wins: 0, losses: 0, points: 0 });
+    if (!stats.has(id))
+      stats.set(id, { id, mp: 0, wins: 0, losses: 0, points: 0, pointsSolo: 0, pointsMulti: 0 });
     return stats.get(id);
   };
   for (const m of matches) {
     const pts = POINTS[m.type];
+    const isSolo = m.type === "single" || m.type === "best_of_3";
     for (const id of m.A) {
       const s = get(id);
       s.mp++;
       if (m.winner === "A") {
         s.wins++;
         s.points += pts;
+        if (isSolo) s.pointsSolo += pts;
+        else s.pointsMulti += pts;
       } else s.losses++;
     }
     for (const id of m.B) {
@@ -290,6 +295,8 @@ function computeStats(matches) {
       if (m.winner === "B") {
         s.wins++;
         s.points += pts;
+        if (isSolo) s.pointsSolo += pts;
+        else s.pointsMulti += pts;
       } else s.losses++;
     }
   }
@@ -297,17 +304,19 @@ function computeStats(matches) {
   return stats;
 }
 
-function computeStandings(players, stats, matches) {
+function computeStandings(players, stats, matches, decayOverrides) {
   const last = lastPlayedMap(matches || []);
   const rows = players
-    .map((p) => stats.get(p.id) || { id: p.id, mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 })
+    .map((p) => stats.get(p.id) || { id: p.id, mp: 0, wins: 0, losses: 0, points: 0, pointsSolo: 0, pointsMulti: 0, winPct: 0 })
     .map((r) => {
       const lp = last[r.id];
       const { weeks, penalty } = lp ? inactivityPenalty(lp) : { weeks: 0, penalty: 0 };
+      const manual = (decayOverrides || {})[String(r.id)] || 0;
+      const decayPenalty = Math.max(penalty, manual);
       return {
         ...r,
-        effWinPct: Math.max(0, r.winPct - penalty),
-        decayPenalty: penalty,
+        effWinPct: Math.max(0, r.winPct - decayPenalty),
+        decayPenalty,
         weeksInactive: weeks,
       };
     });
@@ -641,7 +650,7 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
       const cls = r.rank === 1 ? "rank-1" : r.rank === 2 ? "rank-2" : r.rank === 3 ? "rank-3" : "";
       return `<tr>
       <td class="rank-cell ${cls}">${r.rank}${r.tied ? " =" : ""}</td>
-      <td><a class="player-cell" href="#/players/${r.id}">${avatar(p)}<b>${esc(displayName(p))}</b></a></td>
+      <td><a class="player-cell" href="#/players/${r.id}">${avatar(p)}<span style="min-width:0"><b>${esc(displayName(p))}</b><span style="display:block;font-size:.62rem;line-height:1.3;color:rgba(255,255,255,.35)">single pts: ${r.pointsSolo || 0} · multi pts: ${r.pointsMulti || 0}</span></span></a></td>
       <td>${r.mp}</td>
       <td class="wins">${r.wins}</td>
       <td class="losses">${r.losses}</td>
@@ -664,7 +673,7 @@ function standingsTableHTML(standings, players, sortKey = "rank", sortAsc = true
 function pageDashboard(data) {
   const { players, matches } = data;
   const stats = computeStats(matches);
-  const standings = computeStandings(players, stats, matches);
+  const standings = computeStandings(players, stats, matches, LEAGUE.decayOverrides);
   const month = new Date().toISOString().slice(0, 7);
   const awards = monthlyAwards(matches, month);
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -738,8 +747,8 @@ function pageDashboard(data) {
       <div class="glass stat-card"><p class="stat-label">Players</p><p class="stat-value">${players.length}</p><p class="stat-sub">in the squad</p></div>
       <div class="glass stat-card"><p class="stat-value ice">${matches.length}</p><p class="stat-label">Matches played</p><p class="stat-sub">all formats</p></div>
       <div class="glass stat-card"><p class="stat-label">Highest win rate</p><p class="stat-value">${
-        best ? best.winPct.toFixed(1) + "%" : "—"
-      }</p><p class="stat-sub">${best ? esc(displayName(byId.get(best.id))) + " · " + best.wins + "W" : ""}</p></div>
+        standings[0] ? standings[0].effWinPct.toFixed(1) + "%" : "—"
+      }</p><p class="stat-sub">${standings[0] ? esc(displayName(byId.get(standings[0].id))) + " · " + standings[0].wins + "W" : ""}</p></div>
       <div class="glass stat-card"><p class="stat-value ice">${totalPoints}</p><p class="stat-label">Total points</p><p class="stat-sub">earned all season</p></div>
     </div>
 
@@ -780,7 +789,7 @@ function pageDashboard(data) {
 }
 
 function pageStandings(data, sortKey, sortAsc) {
-  const standings = computeStandings(data.players, computeStats(data.matches), data.matches);
+  const standings = computeStandings(data.players, computeStats(data.matches), data.matches, LEAGUE.decayOverrides);
   const streaks = computeStreaks(data.matches);
   const chipHTML = data.players
     .map((p) => ({ p, s: streaks.get(p.id) }))
@@ -803,7 +812,7 @@ function pageStandings(data, sortKey, sortAsc) {
     <div class="page-head">
       <p class="eyebrow">League table</p>
       <h1>Standings</h1>
-      <p>Ranked by <b style="color:var(--volt-300)">effective win rate</b>. The inactivity rule: miss a full week and you lose 10 win% — another week, another 10 (your raw rate is kept; the penalty hits the ranking only). Win rate is the performance metric used for monthly awards too. Tap a column to sort.</p>
+      <p>Ranked by <b style="color:var(--volt-300)">effective win rate</b>. The inactivity rule: miss a full week and you lose 10 win% — another week, another 10 (the penalty shows everywhere your win rate appears). Win rate is the performance metric used for monthly awards too. Tap a column to sort.</p>
     </div>
     <div id="tableHost">${standingsTableHTML(standings, data.players, sortKey, sortAsc)}</div>
     ${
@@ -819,12 +828,14 @@ function pageStandings(data, sortKey, sortAsc) {
 
 function pagePlayers(data) {
   const stats = computeStats(data.matches);
-  const standings = computeStandings(data.players, stats, data.matches);
+  const standings = computeStandings(data.players, stats, data.matches, LEAGUE.decayOverrides);
   const rankById = new Map(standings.map((r) => [r.id, r]));
   const cards = data.players
     .map((p) => {
       const s = stats.get(p.id) || { mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 };
       const r = rankById.get(p.id);
+      const eff = r ? r.effWinPct : 0;
+      const penalized = r && r.decayPenalty > 0 && s.mp > 0;
       return `<a class="glass glass-hover player-card" href="#/players/${p.id}">
         <div class="top">
           ${avatar(p, r && r.rank === 1 ? "ring" : "")}
@@ -840,7 +851,9 @@ function pagePlayers(data) {
           <div><b style="color:var(--ember-400)">${s.losses}</b><span>L</span></div>
           <div><b>${s.points}</b><span>Pts</span></div>
         </div>
-        <p class="winrate">Win rate ${s.winPct.toFixed(1)}%</p>
+        <p class="winrate" ${penalized ? 'style="color:var(--ember-400)"' : ""}>Win rate ${eff.toFixed(1)}%${
+          penalized ? ` (raw ${s.winPct.toFixed(1)}%)` : ""
+        }</p>
       </a>`;
     })
     .join("");
@@ -860,7 +873,7 @@ function pageProfile(data, playerId) {
   const all = data.matches;
   const mine = all.filter((m) => m.A.includes(p.id) || m.B.includes(p.id));
   const stats = computeStats(mine).get(p.id) || { mp: 0, wins: 0, losses: 0, points: 0, winPct: 0 };
-  const standings = computeStandings(data.players, computeStats(all), all);
+  const standings = computeStandings(data.players, computeStats(all), all, LEAGUE.decayOverrides);
   const rank = standings.find((r) => r.id === p.id);
   const bd = formatBreakdown(all, p.id);
   const byId = new Map(data.players.map((x) => [x.id, x]));
@@ -934,7 +947,7 @@ function pageProfile(data, playerId) {
       </div>
     </section>
     <div class="tiles">
-      <div class="glass tile"><b style="color:var(--volt-300)">${stats.winPct.toFixed(1)}%</b><span>Win rate</span></div>
+      <div class="glass tile"><b style="color:${rank && rank.decayPenalty > 0 ? "var(--ember-400)" : "var(--volt-300)"}">${(rank && rank.mp ? rank.effWinPct : stats.winPct).toFixed(1)}%</b><span>Win rate</span></div>
       <div class="glass tile"><b>${stats.mp}</b><span>Matches</span></div>
       <div class="glass tile"><b style="color:var(--volt-300)">${stats.wins}</b><span>Wins</span></div>
       <div class="glass tile"><b style="color:var(--ember-400)">${stats.losses}</b><span>Losses</span></div>

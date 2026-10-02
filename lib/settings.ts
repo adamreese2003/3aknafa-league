@@ -11,7 +11,26 @@ export const DEFAULT_SETTINGS: LeagueSettings = {
   pointsMultiplayerBo3: 2,
   minMonthlyMatches: 5,
   monthlyAwardsEnabled: true,
+  decayOverrides: {},
 };
+
+function parseOverrides(raw: string | undefined): Record<string, number> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const out: Record<string, number> = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        const n = Number(v);
+        if (Number.isFinite(n) && n !== 0) out[k] = n;
+      }
+      return out;
+    }
+  } catch {
+    /* corrupt value — ignore */
+  }
+  return {};
+}
 
 export function getSettings(): LeagueSettings {
   const db = getDb();
@@ -31,6 +50,7 @@ export function getSettings(): LeagueSettings {
     minMonthlyMatches: Number(map.get("minMonthlyMatches") ?? DEFAULT_SETTINGS.minMonthlyMatches),
     monthlyAwardsEnabled:
       (map.get("monthlyAwardsEnabled") ?? String(DEFAULT_SETTINGS.monthlyAwardsEnabled)) === "true",
+    decayOverrides: parseOverrides(map.get("decayOverrides")),
   };
 }
 
@@ -46,6 +66,7 @@ export function saveSettings(patch: Partial<LeagueSettings>): LeagueSettings {
     ["pointsMultiplayerBo3", String(next.pointsMultiplayerBo3)],
     ["minMonthlyMatches", String(next.minMonthlyMatches)],
     ["monthlyAwardsEnabled", String(next.monthlyAwardsEnabled)],
+    ["decayOverrides", JSON.stringify(next.decayOverrides ?? {})],
   ];
   const upsert = db.prepare(
     "INSERT INTO league_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"

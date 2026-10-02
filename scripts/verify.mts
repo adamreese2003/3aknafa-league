@@ -78,6 +78,7 @@ console.log("\n— Spec §35: single-match scenarios —");
   check("Alpha win rate 66.66…%", Math.round(a.winPct * 10) / 10, 66.7);
   const b = stats.get(3)!;
   check("Bravo 5/5/0 → 100%", [b.matchesPlayed, b.wins, b.losses, b.points], [5, 5, 0, 5]);
+  check("Bravo points all solo", [b.pointsSolo, b.pointsMulti], [5, 0]);
   check("Bravo 100% ranks above Alpha in performance order",
     orderByPerformance(stats, playersById).map((s) => s.playerId), [3, 1, 2, 4]);
 }
@@ -111,6 +112,7 @@ console.log("\n— Spec §5/§6: multiplayer & multiplayer Bo3 —");
   check("2v2 winners (1,2): MP win +1 then Bo3 series loss", [t(1), t(2)], [[2, 1, 1, 1], [2, 1, 1, 1]]);
   check("3v2 Bo3 winners (3,4): series win +2 each", [t(3), t(4)], [[2, 1, 1, 2], [2, 1, 1, 2]]);
   check("P5 (only Bo3): 1 match, 1 win, +2 pts", t(5), [1, 1, 0, 2]);
+  check("P5/P3 points all multi", [stats.get(5)!.pointsSolo, stats.get(5)!.pointsMulti, stats.get(3)!.pointsSolo, stats.get(3)!.pointsMulti], [0, 2, 0, 2]);
   check("uneven team sizes allowed (3v2): P6 lost MP earlier, wins Bo3", t(6), [1, 1, 0, 2]);
 }
 
@@ -182,6 +184,14 @@ console.log("\n— Inactivity decay: −10 win% per full idle week —");
   check("decay applied: 69.2% − 10 = 59.2%", Math.round(p4.effWinPct * 10) / 10, 59.2);
   check("raw win% preserved on the record", Math.round(p4.winPct * 10) / 10, 69.2);
   check("active player unpenalized", p6.decayPenalty, 0);
+
+  // Manual overrides (admin): force −10 on the ACTIVE player, no stacking with auto decay.
+  const s2o = rankForStandings(computePlayerStats(m2, S), P, m2, { "6": 10 });
+  const p6o = s2o.find((r) => r.playerId === 6)!;
+  check("manual override applies to active player (37 → 27)", Math.round(p6o.effWinPct * 10) / 10, 27);
+  const p4o = s2o.find((r) => r.playerId === 4)!;
+  check("override never stacks with auto decay (still 59.2)", Math.round(p4o.effWinPct * 10) / 10, 59.2);
+  check("override flips the order (decayed 9W-59% above penalized 10W-27%)", p4o.rank < p6o.rank, true);
   check("idle 9W-59.2% still above active 10W-37%", p4.rank < p6.rank, true);
 
   // And decay can demote: idle 90% (15 days → −20 → 70%) falls below active 75%.

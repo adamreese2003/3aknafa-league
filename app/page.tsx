@@ -99,19 +99,17 @@ export default async function DashboardPage() {
         <StatCard
           label="Highest win rate"
           value={
-            league.totals.highestWinRate
-              ? `${league.totals.highestWinRate.winPct.toFixed(1)}%`
-              : "—"
+            league.standings[0] ? `${league.standings[0].effWinPct.toFixed(1)}%` : "—"
           }
           sub={(() => {
-            const s = league.totals.highestWinRate;
-            if (!s) return null;
-            const p = league.playerById.get(s.playerId);
-            return p ? `${p.nickname || p.name} · ${s.wins}W` : null;
+            const top = league.standings[0];
+            if (!top) return null;
+            const p = league.playerById.get(top.playerId);
+            return p ? `${p.nickname || p.name} · ${top.wins}W` : null;
           })()}
           player={(() => {
-            const s = league.totals.highestWinRate;
-            return s ? league.playerById.get(s.playerId) ?? null : null;
+            const top = league.standings[0];
+            return top ? league.playerById.get(top.playerId) ?? null : null;
           })()}
         />
         <StatCard

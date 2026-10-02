@@ -23,7 +23,16 @@ export function computePlayerStats(
   const get = (playerId: number): PlayerStats => {
     let s = stats.get(playerId);
     if (!s) {
-      s = { playerId, matchesPlayed: 0, wins: 0, losses: 0, points: 0, winPct: 0 };
+      s = {
+        playerId,
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        points: 0,
+        pointsSolo: 0,
+        pointsMulti: 0,
+        winPct: 0,
+      };
       stats.set(playerId, s);
     }
     return s;
@@ -31,12 +40,15 @@ export function computePlayerStats(
 
   for (const match of matches) {
     const winnerPoints = pointsForType(settings, match.type);
+    const isSolo = match.type === "single" || match.type === "best_of_3";
     for (const p of match.participants) {
       const s = get(p.playerId);
       s.matchesPlayed += 1;
       if (p.side === match.winnerSide) {
         s.wins += 1;
         s.points += winnerPoints;
+        if (isSolo) s.pointsSolo += winnerPoints;
+        else s.pointsMulti += winnerPoints;
       } else {
         s.losses += 1;
       }
@@ -58,12 +70,16 @@ export function mergeStats(...all: Map<number, PlayerStats>[]): Map<number, Play
         wins: 0,
         losses: 0,
         points: 0,
+        pointsSolo: 0,
+        pointsMulti: 0,
         winPct: 0,
       };
       cur.matchesPlayed += s.matchesPlayed;
       cur.wins += s.wins;
       cur.losses += s.losses;
       cur.points += s.points;
+      cur.pointsSolo += s.pointsSolo;
+      cur.pointsMulti += s.pointsMulti;
       out.set(s.playerId, cur);
     }
   }
@@ -122,10 +138,24 @@ export function inactivityPenalty(
   return { weeks, penalty: weeks * 10 };
 }
 
+/** Win % after inactivity decay + manual overrides — used everywhere win % performance is shown. */
+export function effectiveWinPctFor(
+  playerId: number,
+  rawWinPct: number,
+  matches: MatchRecord[],
+  overrides: Record<string, number> = {}
+): number {
+  const lp = lastPlayedMap(matches).get(playerId);
+  const { penalty } = lp ? inactivityPenalty(lp) : { penalty: 0 };
+  const manual = overrides[String(playerId)] ?? 0;
+  return Math.max(0, rawWinPct - Math.max(penalty, manual));
+}
+
 export function rankForStandings(
   stats: Map<number, PlayerStats>,
   players: Player[],
-  matches: MatchRecord[] = []
+  matches: MatchRecord[] = [],
+  decayOverrides: Record<string, number> = {}
 ): RankedPlayerStats[] {
   const byId = new Map(players.map((p) => [p.id, p]));
   const last = lastPlayedMap(matches);
@@ -133,10 +163,12 @@ export function rankForStandings(
     .map((s) => {
       const lp = last.get(s.playerId);
       const { weeks, penalty } = lp ? inactivityPenalty(lp) : { weeks: 0, penalty: 0 };
+      const manual = decayOverrides[String(s.playerId)] ?? 0;
+      const decayPenalty = Math.max(penalty, manual);
       return {
         ...s,
-        effWinPct: Math.max(0, s.winPct - penalty),
-        decayPenalty: penalty,
+        effWinPct: Math.max(0, s.winPct - decayPenalty),
+        decayPenalty,
         weeksInactive: weeks,
         player: byId.get(s.playerId),
       };

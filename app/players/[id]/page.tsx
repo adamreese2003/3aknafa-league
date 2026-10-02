@@ -4,7 +4,7 @@ import Image from "next/image";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import { MonthlyTrendChart } from "@/components/Charts";
 import { loadLeague } from "@/lib/league";
-import { computePlayerStats, computeStreaks, monthKeyOf } from "@/lib/stats";
+import { computePlayerStats, computeStreaks, effectiveWinPctFor, monthKeyOf } from "@/lib/stats";
 import { getSettings, pointsForType } from "@/lib/settings";
 import { formatDate, formatMonth } from "@/lib/view";
 import { getAllPlayers } from "@/lib/players";
@@ -119,6 +119,7 @@ export default async function PlayerProfilePage({
 
   const displayName = player.nickname || player.name;
   const streak = computeStreaks(allMatches).get(playerId) ?? null;
+  const effWin = effectiveWinPctFor(playerId, career.winPct, allMatches, league.settings.decayOverrides);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -196,7 +197,12 @@ export default async function PlayerProfilePage({
       {/* Stat tiles */}
       <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: "Win rate", value: `${career.winPct.toFixed(1)}%`, cls: "text-volt-300" },
+          {
+            label: "Win rate",
+            value: `${effWin.toFixed(1)}%`,
+            cls: effWin < career.winPct ? "text-ember-400" : "text-volt-300",
+            sub: effWin < career.winPct ? `raw ${career.winPct.toFixed(1)}%` : null,
+          },
           { label: "Matches", value: career.matchesPlayed, cls: "text-white" },
           { label: "Wins", value: career.wins, cls: "text-volt-300" },
           { label: "Losses", value: career.losses, cls: "text-ember-400" },
@@ -216,6 +222,7 @@ export default async function PlayerProfilePage({
             <p className="mt-1 text-[0.65rem] tracking-[0.16em] text-white/40">
               {s.label.toUpperCase()}
             </p>
+            {s.sub && <p className="text-[0.6rem] text-white/30">{s.sub}</p>}
           </div>
         ))}
       </section>

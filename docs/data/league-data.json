@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-10-02T03:37:53.183Z",
+  "exportedAt": "2026-10-02T04:11:25.684Z",
   "source": "3AKNAFA LEAGUE admin app",
   "settings": {
     "leagueName": "3AKNAFA LEAGUE",
@@ -8,7 +8,10 @@
     "pointsMultiplayer": 1,
     "pointsMultiplayerBo3": 2,
     "minMonthlyMatches": 5,
-    "monthlyAwardsEnabled": true
+    "monthlyAwardsEnabled": true,
+    "decayOverrides": {
+      "7": 10
+    }
   },
   "players": [
     {

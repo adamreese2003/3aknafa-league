@@ -7,12 +7,19 @@ import type { LeagueSettings } from "@/lib/types";
 export default function SettingsForm({
   initialSettings,
   username,
+  players,
 }: {
   initialSettings: LeagueSettings;
   username: string;
+  players: { id: number; name: string; nickname: string | null; active: boolean }[];
 }) {
   const router = useRouter();
   const [form, setForm] = useState<LeagueSettings>(initialSettings);
+  const [penalties, setPenalties] = useState<Record<string, number>>(
+    Object.fromEntries(
+      Object.entries(initialSettings.decayOverrides ?? {}).map(([k, v]) => [k, Number(v)])
+    )
+  );
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +40,15 @@ export default function SettingsForm({
     setError(null);
     setNotice(null);
     try {
+      const cleanPenalties: Record<string, number> = {};
+      for (const [k, v] of Object.entries(penalties)) {
+        const n = Number(v);
+        if (Number.isFinite(n) && n !== 0) cleanPenalties[k] = n;
+      }
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, decayOverrides: cleanPenalties }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed.");
@@ -161,6 +173,44 @@ export default function SettingsForm({
         <button onClick={save} disabled={busy} className="btn btn-primary mt-6">
           {busy ? "Saving…" : "Save settings"}
         </button>
+      </section>
+
+      <section className="glass rounded-2xl p-6 sm:p-8">
+        <h2 className="section-title mb-2">Manual ranking penalties</h2>
+        <p className="mb-5 text-sm text-white/45">
+          Extra −win% penalties on top of the automatic inactivity decay (0 = none). Part of the
+          same save button above.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {players.map((p) => {
+            const key = String(p.id);
+            const val = penalties[key] ?? 0;
+            return (
+              <label
+                key={p.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5"
+              >
+                <span className="min-w-0 truncate text-sm text-white/75">
+                  {p.nickname || p.name}
+                  {!p.active && <span className="ml-1.5 text-[0.65rem] text-white/30">inactive</span>}
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <input
+                    type="number"
+                    min={-100}
+                    max={100}
+                    value={val}
+                    onChange={(e) =>
+                      setPenalties((prev) => ({ ...prev, [key]: Number(e.target.value) }))
+                    }
+                    className="field !w-20 !px-2 !py-1 text-right text-sm"
+                  />
+                  <span className="text-xs text-white/40">%</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </section>
 
       <section className="glass rounded-2xl p-6 sm:p-8">
