@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-10-02T04:11:25.684Z",
+  "exportedAt": "2026-10-03T17:04:24.246Z",
   "source": "3AKNAFA LEAGUE admin app",
   "settings": {
     "leagueName": "3AKNAFA LEAGUE",
@@ -9,9 +9,7 @@
     "pointsMultiplayerBo3": 2,
     "minMonthlyMatches": 5,
     "monthlyAwardsEnabled": true,
-    "decayOverrides": {
-      "7": 10
-    }
+    "decayOverrides": {}
   },
   "players": [
     {
@@ -1180,6 +1178,186 @@
       ],
       "B": [
         1
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 82,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        5
+      ],
+      "location": "BET GAMILY",
+      "notes": null
+    },
+    {
+      "id": 83,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        7
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 84,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        2
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 85,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        7
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 86,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        5
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 87,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        7
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 88,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        2
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 89,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 90,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        7
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 91,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        2
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 92,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        5
+      ],
+      "B": [
+        10
+      ],
+      "location": null,
+      "notes": null
+    },
+    {
+      "id": 93,
+      "type": "single",
+      "date": "2026-10-03",
+      "winner": "A",
+      "games": [],
+      "A": [
+        10
+      ],
+      "B": [
+        5
       ],
       "location": null,
       "notes": null
